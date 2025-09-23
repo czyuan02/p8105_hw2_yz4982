@@ -7,9 +7,13 @@ output:
     toc_float: true
 ---
 
+```{r library}
+library(tidyverse)
+```
+
 Promblem 1
 ------------------------------------------------------------
-### clean the data 
+### clean data
 ```{r load-weather}
 
 ```
