@@ -1505,8 +1505,8 @@ border-radius: 0px;
 <pre class="r"><code>library(lubridate) # date convert</code></pre>
 <div id="promblem-1" class="section level2">
 <h2>Promblem 1</h2>
-<div id="clean-pols_month_df-data" class="section level3">
-<h3>clean pols_month_df data</h3>
+<div id="clean-pols_month-data" class="section level3">
+<h3>Clean Pols_Month Data</h3>
 <pre class="r"><code>pols_month_df = 
   read_csv(&quot;fivethirtyeight_datasets/pols-month.csv&quot;, 
            na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;)) |&gt;
@@ -1551,7 +1551,7 @@ border-radius: 0px;
 ## # ℹ 812 more rows</code></pre>
 </div>
 <div id="clean-snp-data" class="section level3">
-<h3>clean snp data</h3>
+<h3>Clean SNP Data</h3>
 <pre class="r"><code>snp_df = 
   read_csv(&quot;fivethirtyeight_datasets/snp.csv&quot;, 
            na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;)) |&gt;
@@ -1562,15 +1562,15 @@ border-radius: 0px;
   
   # Arrange according to year and month,
   mutate(
-    year  = year(date),
-    month = month(date),
+    year  = lubridate::year(date),
+    month = lubridate::month(date),
     month = month.name[month],
     month = factor(month, levels = month.name, ordered = TRUE),
-    day   = mday(date)
+    day   = lubridate::mday(date)
   ) |&gt;
   
   # Year and month are the leading columns
-  select(year, month, day, close) |&gt;
+  select(year, month, close) |&gt;
   arrange(year, month)</code></pre>
 <pre><code>## Rows: 787 Columns: 2
 ## ── Column specification ────────────────────────────────────────────────────────
@@ -1581,23 +1581,168 @@ border-radius: 0px;
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>print(snp_df, n = 10)</code></pre>
-<pre><code>## # A tibble: 787 × 4
-##     year month       day close
-##    &lt;dbl&gt; &lt;ord&gt;     &lt;int&gt; &lt;dbl&gt;
-##  1  1969 January       2 103. 
-##  2  1969 February      3  98.1
-##  3  1969 March         3 102. 
-##  4  1969 April         1 104. 
-##  5  1969 May           1 103. 
-##  6  1969 June          2  97.7
-##  7  1969 July          1  91.8
-##  8  1969 August        1  95.5
-##  9  1969 September     2  93.1
-## 10  1969 October       1  97.1
+<pre><code>## # A tibble: 787 × 3
+##     year month     close
+##    &lt;dbl&gt; &lt;ord&gt;     &lt;dbl&gt;
+##  1  1969 January   103. 
+##  2  1969 February   98.1
+##  3  1969 March     102. 
+##  4  1969 April     104. 
+##  5  1969 May       103. 
+##  6  1969 June       97.7
+##  7  1969 July       91.8
+##  8  1969 August     95.5
+##  9  1969 September  93.1
+## 10  1969 October    97.1
 ## # ℹ 777 more rows</code></pre>
 </div>
-<div id="clean-snp-data-1" class="section level3">
-<h3>clean snp data</h3>
+<div id="clean-unemployment-data" class="section level3">
+<h3>Clean Unemployment Data</h3>
+<pre class="r"><code>unemployment_df =
+  read_csv(&quot;fivethirtyeight_datasets/unemployment.csv&quot;,
+           na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;)) |&gt;
+  janitor::clean_names() |&gt;                    
+  
+  # Wide to long 
+  pivot_longer(
+    cols =jan:dec,
+    names_to = &quot;month&quot;,
+    values_to = &quot;unemployment_rate&quot;
+  ) |&gt;
+  mutate(
+    year  = as.integer(year),
+    # Mapped the abbreviation  to the full month name and set as an ordering factor
+    month = factor(
+      month,
+      levels = tolower(month.abb),
+      labels = month.name,
+      ordered = TRUE
+    )
+  ) |&gt;
+  select(year, month, unemployment_rate) |&gt;
+  arrange(year, month)</code></pre>
+<pre><code>## Rows: 68 Columns: 13
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## dbl (13): Year, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>print(unemployment_df, n = 10)</code></pre>
+<pre><code>## # A tibble: 816 × 3
+##     year month     unemployment_rate
+##    &lt;int&gt; &lt;ord&gt;                 &lt;dbl&gt;
+##  1  1948 January                 3.4
+##  2  1948 February                3.8
+##  3  1948 March                   4  
+##  4  1948 April                   3.9
+##  5  1948 May                     3.5
+##  6  1948 June                    3.6
+##  7  1948 July                    3.6
+##  8  1948 August                  3.9
+##  9  1948 September               3.8
+## 10  1948 October                 3.7
+## # ℹ 806 more rows</code></pre>
+</div>
+<div id="merge-snp-into-pols" class="section level3">
+<h3>Merge SNP Into Pols</h3>
+<pre class="r"><code>pols_snp_df = pols_month_df |&gt;
+  left_join(snp_df, by = c(&quot;year&quot;, &quot;month&quot;))
+print(pols_snp_df)</code></pre>
+<pre><code>## # A tibble: 822 × 10
+##     year month   gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president close
+##    &lt;dbl&gt; &lt;ord&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+##  1  1947 January      23      51     253      23      45     198 dem          NA
+##  2  1947 Februa…      23      51     253      23      45     198 dem          NA
+##  3  1947 March        23      51     253      23      45     198 dem          NA
+##  4  1947 April        23      51     253      23      45     198 dem          NA
+##  5  1947 May          23      51     253      23      45     198 dem          NA
+##  6  1947 June         23      51     253      23      45     198 dem          NA
+##  7  1947 July         23      51     253      23      45     198 dem          NA
+##  8  1947 August       23      51     253      23      45     198 dem          NA
+##  9  1947 Septem…      23      51     253      23      45     198 dem          NA
+## 10  1947 October      23      51     253      23      45     198 dem          NA
+## # ℹ 812 more rows</code></pre>
+</div>
+<div id="fianlly-merging-unemployment" class="section level3">
+<h3>Fianlly Merging Unemployment</h3>
+<pre class="r"><code>pols_snp_unemp_df = pols_snp_df |&gt;
+  left_join(unemployment_df, by = c(&quot;year&quot;, &quot;month&quot;)) 
+print(pols_snp_unemp_df, n = 10)</code></pre>
+<pre><code>## # A tibble: 822 × 11
+##     year month   gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president close
+##    &lt;dbl&gt; &lt;ord&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+##  1  1947 January      23      51     253      23      45     198 dem          NA
+##  2  1947 Februa…      23      51     253      23      45     198 dem          NA
+##  3  1947 March        23      51     253      23      45     198 dem          NA
+##  4  1947 April        23      51     253      23      45     198 dem          NA
+##  5  1947 May          23      51     253      23      45     198 dem          NA
+##  6  1947 June         23      51     253      23      45     198 dem          NA
+##  7  1947 July         23      51     253      23      45     198 dem          NA
+##  8  1947 August       23      51     253      23      45     198 dem          NA
+##  9  1947 Septem…      23      51     253      23      45     198 dem          NA
+## 10  1947 October      23      51     253      23      45     198 dem          NA
+## # ℹ 812 more rows
+## # ℹ 1 more variable: unemployment_rate &lt;dbl&gt;</code></pre>
+<pre class="r"><code># dplyr view
+dplyr::glimpse(pols_snp_unemp_df)</code></pre>
+<pre><code>## Rows: 822
+## Columns: 11
+## $ year              &lt;dbl&gt; 1947, 1947, 1947, 1947, 1947, 1947, 1947, 1947, 1947…
+## $ month             &lt;ord&gt; January, February, March, April, May, June, July, Au…
+## $ gov_gop           &lt;dbl&gt; 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 22, …
+## $ sen_gop           &lt;dbl&gt; 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 53, …
+## $ rep_gop           &lt;dbl&gt; 253, 253, 253, 253, 253, 253, 253, 253, 253, 253, 25…
+## $ gov_dem           &lt;dbl&gt; 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 24, …
+## $ sen_dem           &lt;dbl&gt; 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 48, …
+## $ rep_dem           &lt;dbl&gt; 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 19…
+## $ president         &lt;chr&gt; &quot;dem&quot;, &quot;dem&quot;, &quot;dem&quot;, &quot;dem&quot;, &quot;dem&quot;, &quot;dem&quot;, &quot;dem&quot;, &quot;de…
+## $ close             &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+## $ unemployment_rate &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 3.4,…</code></pre>
+<pre class="r"><code># end of 10 lines
+tail(pols_snp_unemp_df, 10) </code></pre>
+<pre><code>## # A tibble: 10 × 11
+##     year month   gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president close
+##    &lt;dbl&gt; &lt;ord&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+##  1  2014 Septem…      29      45     234      21      53     199 dem       1972.
+##  2  2014 October      29      45     234      21      53     199 dem       2018.
+##  3  2014 Novemb…      29      45     235      21      53     201 dem       2068.
+##  4  2014 Decemb…      29      45     235      21      53     201 dem       2059.
+##  5  2015 January      31      54     245      18      44     188 dem       1995.
+##  6  2015 Februa…      31      54     245      18      44     188 dem       2104.
+##  7  2015 March        31      54     245      18      44     188 dem       2068.
+##  8  2015 April        31      54     244      18      44     188 dem       2086.
+##  9  2015 May          31      54     245      18      44     188 dem       2107.
+## 10  2015 June         31      54     246      18      44     188 dem       2063.
+## # ℹ 1 more variable: unemployment_rate &lt;dbl&gt;</code></pre>
+<pre class="r"><code># see missing value
+colSums(is.na(pols_snp_unemp_df))</code></pre>
+<pre><code>##              year             month           gov_gop           sen_gop 
+##                 0                 0                 0                 0 
+##           rep_gop           gov_dem           sen_dem           rep_dem 
+##                 0                 0                 0                 0 
+##         president             close unemployment_rate 
+##                 0               264                12</code></pre>
+<pre class="r"><code># see the table 
+View(pols_snp_unemp_df)</code></pre>
+<p>The pols-month dataset records the number of political party
+representatives in the U.S. by month. The snp dataset gives the closing
+price of the S&amp;P 500 on the last trading day of each month. The
+unemployment dataset contains the national unemployment rate by year and
+month.</p>
+<p>After cleaning and merging, the final dataset consists of 822 rows
+and 11 columns and covers the period January 1947 through June 2015. Key
+variables include political control indicators (date, the number of
+governors, senators, and whether the president was democratic or
+repubulican), S&amp;P stock index, and unemployment_rate. The S&amp;P
+data are not available prior to 1950, so close is missing in those
+years, and the unemployment rate is missing in a few months.</p>
+</div>
+</div>
+<div id="promblem-2" class="section level2">
+<h2>Promblem 2</h2>
+<div id="clean-mr.-trash-wheel-sheet" class="section level3">
+<h3>Clean Mr. Trash Wheel Sheet</h3>
 </div>
 </div>
 

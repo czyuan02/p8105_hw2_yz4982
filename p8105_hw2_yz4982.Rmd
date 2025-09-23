@@ -15,7 +15,7 @@ library(lubridate) # date convert
 
 Promblem 1
 ------------------------------------------------------------
-### clean pols_month_df data
+### Clean Pols_Month Data
 ```{r}
 pols_month_df = 
   read_csv("fivethirtyeight_datasets/pols-month.csv", 
@@ -40,7 +40,7 @@ pols_month_df =
 print(pols_month_df, n = 10)
 ```
 
-### clean snp data
+### Clean SNP Data
 ```{r} 
 snp_df = 
   read_csv("fivethirtyeight_datasets/snp.csv", 
@@ -52,23 +52,88 @@ snp_df =
   
   # Arrange according to year and month,
   mutate(
-    year  = year(date),
-    month = month(date),
+    year  = lubridate::year(date),
+    month = lubridate::month(date),
     month = month.name[month],
     month = factor(month, levels = month.name, ordered = TRUE),
-    day   = mday(date)
+    day   = lubridate::mday(date)
   ) |>
   
   # Year and month are the leading columns
-  select(year, month, day, close) |>
+  select(year, month, close) |>
   arrange(year, month)
 
 print(snp_df, n = 10)
 
 ```
 
-### clean snp data
+### Clean Unemployment Data
 ```{r}
+unemployment_df =
+  read_csv("fivethirtyeight_datasets/unemployment.csv",
+           na = c("NA", ".", "")) |>
+  janitor::clean_names() |>                    
+  
+  # Wide to long 
+  pivot_longer(
+    cols =jan:dec,
+    names_to = "month",
+    values_to = "unemployment_rate"
+  ) |>
+  mutate(
+    year  = as.integer(year),
+    # Mapped the abbreviation  to the full month name and set as an ordering factor
+    month = factor(
+      month,
+      levels = tolower(month.abb),
+      labels = month.name,
+      ordered = TRUE
+    )
+  ) |>
+  select(year, month, unemployment_rate) |>
+  arrange(year, month)
 
+print(unemployment_df, n = 10)
+```
+
+### Merge SNP Into Pols
+```{r}
+pols_snp_df = pols_month_df |>
+  left_join(snp_df, by = c("year", "month"))
+print(pols_snp_df)
+```
+
+### Fianlly Merging Unemployment
+```{r}
+pols_snp_unemp_df = pols_snp_df |>
+  left_join(unemployment_df, by = c("year", "month")) 
+print(pols_snp_unemp_df, n = 10)
+```
+
+```{r}
+# dplyr view
+dplyr::glimpse(pols_snp_unemp_df)
+
+# end of 10 lines
+tail(pols_snp_unemp_df, 10) 
+
+# see missing value
+colSums(is.na(pols_snp_unemp_df))
+
+# see the table 
+View(pols_snp_unemp_df)
+```
+The pols-month dataset records the number of political party representatives in the U.S. by month. 
+The snp dataset gives the closing price of the S&P 500 on the last trading day of each month.
+The unemployment dataset contains the national unemployment rate by year and month. 
+
+After cleaning and merging, the final dataset consists of 822 rows and 11 columns and covers the period January 1947 through June 2015. 
+Key variables include political control indicators (date, the number of governors, senators, and whether the president was democratic or repubulican), S&P stock index, and unemployment_rate. The S&P data are not available prior to 1950, so close is missing in those years, and the unemployment rate is missing in a few months. 
+
+
+Promblem 2
+------------------------------------------------------------
+### Clean Mr. Trash Wheel Sheet
+```{r}
 
 ```
