@@ -11,6 +11,8 @@ output:
 library(tidyverse)
 library(janitor)
 library(lubridate) # date convert
+library(readxl) 
+library(scales)
 ```
 
 Promblem 1
@@ -37,7 +39,7 @@ pols_month_df =
   # remove prez_dem and prez_gop and the day variable
   select(-prez_gop, -prez_dem, -day)
 
-print(pols_month_df, n = 10)
+print(pols_month_df, n = 5)
 ```
 
 ### Clean SNP Data
@@ -63,7 +65,7 @@ snp_df =
   select(year, month, close) |>
   arrange(year, month)
 
-print(snp_df, n = 10)
+print(snp_df, n = 5)
 
 ```
 
@@ -93,7 +95,7 @@ unemployment_df =
   select(year, month, unemployment_rate) |>
   arrange(year, month)
 
-print(unemployment_df, n = 10)
+print(unemployment_df, n = 5)
 ```
 
 ### Merge SNP Into Pols
@@ -107,21 +109,22 @@ print(pols_snp_df)
 ```{r}
 pols_snp_unemp_df = pols_snp_df |>
   left_join(unemployment_df, by = c("year", "month")) 
-print(pols_snp_unemp_df, n = 10)
+print(pols_snp_unemp_df, n = 5)
 ```
 
+### Overview
 ```{r}
 # dplyr view
 dplyr::glimpse(pols_snp_unemp_df)
 
 # end of 10 lines
-tail(pols_snp_unemp_df, 10) 
+tail(pols_snp_unemp_df, 5) 
 
 # see missing value
 colSums(is.na(pols_snp_unemp_df))
 
 # see the table 
-View(pols_snp_unemp_df)
+# View(pols_snp_unemp_df)
 ```
 The pols-month dataset records the number of political party representatives in the U.S. by month. 
 The snp dataset gives the closing price of the S&P 500 on the last trading day of each month.
@@ -133,7 +136,151 @@ Key variables include political control indicators (date, the number of governor
 
 Promblem 2
 ------------------------------------------------------------
-### Clean Mr. Trash Wheel Sheet
+### Clean Mr.Trash Wheel Sheet
+```{r}
+trash_path <- "./202409 Trash Wheel Collection Data.xlsx"
+
+mr_trash_df <-
+  read_excel(
+    path = trash_path,
+    sheet = "Mr. Trash Wheel",
+    range = readxl::cell_cols("A:N"),
+    na = c("NA", ".", ""),
+    ) |>
+  # Use reasonable variable names
+  clean_names() |>
+  # Convert Date type
+  mutate(date = as_date(date)) |>
+  # Omit rows that do not include dumpster-specific data
+  filter(!is.na(dumpster), !is.na(date)) |>
+  # Round the number of sports balls 
+  dplyr::mutate(sports_balls = as.integer(round(sports_balls))) |>
+  mutate(wheel = "Mr.Trash Wheel") |>
+  relocate(wheel, .before = 1)
+```
+
+
+### Clean Professor Trash Wheel Sheet
+```{r}
+prof_trash_df <-
+  read_excel(
+    path  = trash_path,
+    sheet = "Professor Trash Wheel",
+    range = readxl::cell_cols("A:M"),
+    na    = c("NA", ".", "")
+  ) |>
+  clean_names() |>
+  mutate(date = as_date(date)) |>
+  filter(!is.na(dumpster), !is.na(date)) |>
+  mutate(wheel = "Professor Trash Wheel") |>
+  relocate(wheel, .before = 1)
+```
+
+### Clean Gwynnda Sheet
+```{r}
+gwynnda_trash_df <-
+  read_excel(
+    path  = trash_path,
+    sheet = "Gwynnda Trash Wheel",
+    range = readxl::cell_cols("A:L"),
+    na    = c("NA", ".", "")
+  ) |>
+  clean_names() |>
+  mutate(date = as_date(date)) |>
+  filter(!is.na(dumpster), !is.na(date)) |>
+  mutate(wheel = "Gwynnda") |>
+  relocate(wheel, .before = 1)
+```
+
+### Merge
+```{r}
+# 1)  Standardize The Date Types In Each Sheet
+mr_trash_df <- mr_trash_df |>
+  
+  # Rebuild Consistent Types Dates
+  select(-any_of(c("year", "month"))) |>
+  mutate(
+    date  = lubridate::as_date(date),
+    year  = as.integer(lubridate::year(date)),
+    month = factor(lubridate::month(date, label = TRUE, abbr = FALSE),
+                   levels = month.name, ordered = TRUE)
+  )
+
+prof_trash_df <- prof_trash_df |>
+  select(-any_of(c("year", "month"))) |>
+  mutate(
+    date  = lubridate::as_date(date),
+    year  = as.integer(lubridate::year(date)),
+    month = factor(lubridate::month(date, label = TRUE, abbr = FALSE),
+                   levels = month.name, ordered = TRUE)
+  )
+
+gwynnda_trash_df <- gwynnda_trash_df |>
+  select(-any_of(c("year", "month"))) |>
+  mutate(
+    date  = lubridate::as_date(date),
+    year  = as.integer(lubridate::year(date)),
+    month = factor(lubridate::month(date, label = TRUE, abbr = FALSE),
+                   levels = month.name, ordered = TRUE)
+  )
+
+
+# Merge
+common_vars <- Reduce(intersect, list(
+  names(mr_trash_df), names(prof_trash_df), names(gwynnda_trash_df)
+))
+
+mr_trash_df      <- dplyr::select(mr_trash_df,      all_of(common_vars))
+prof_trash_df    <- dplyr::select(prof_trash_df,    all_of(common_vars))
+gwynnda_trash_df <- dplyr::select(gwynnda_trash_df, all_of(common_vars))
+
+trash_all <- dplyr::bind_rows(
+  mr_trash_df,
+  prof_trash_df,
+  gwynnda_trash_df
+) |>
+  arrange(date, wheel, dumpster)
+
+glimpse(trash_all)
+colSums(is.na(trash_all))
+```
+
+### Calculate
+Total Weight Of Trash Collected By Professor Trash Wheel
+```{r}
+prof_total_weight <- trash_all |>
+  filter(wheel == "Professor Trash Wheel") |>
+  summarise(total_weight_tons = sum(weight_tons, na.rm = TRUE)) |>
+  pull(total_weight_tons)
+```
+
+Total Number Of Cigarette Collected By Gwynnda In June 2022
+```{r}
+gwynnda_cigs_jun2022 <- trash_all |>
+  filter(wheel == "Gwynnda", year(date) == 2022, month(date) == 6) |>
+  summarise(total_cigarette_butts = sum(cigarette_butts, na.rm = TRUE)) |>
+  pull(total_cigarette_butts)
+```
+
+### Overview
+```{r}
+n_obs      <- nrow(trash_all)
+date_range <- range(trash_all$date, na.rm = TRUE)
+
+prof_total_weight
+gwynnda_cigs_jun2022
+n_obs
+date_range
+```
+
+In the cleaned and combined Trash Wheel dataset, there are `r comma(n_obs)` observations spanning `r format(date_range[1], "%b %Y")` to `r format(date_range[2], "%b %Y")`.
+Each row records a dumpster collection with key variables such as `dumpster` (load ID), `date`, `weight_tons` (trash weight in tons), `volume_cubic_yards` (volume), and composition counts including `cigarette_butts`, `plastic_bottles`, and `wrappers`.
+
+Based on available data, **Professor Trash Wheel** collected a total of `r comma(round(prof_total_weight, 2))` tons of trash, and **Gwynnda** collected `r comma(gwynnda_cigs_jun2022)` cigarette butts in **June 2022**.
+
+Promblem 3
+------------------------------------------------------------
+### 
 ```{r}
 
 ```

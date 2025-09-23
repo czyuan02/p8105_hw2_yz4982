@@ -1502,7 +1502,19 @@ border-radius: 0px;
 ## The following objects are masked from &#39;package:stats&#39;:
 ## 
 ##     chisq.test, fisher.test</code></pre>
-<pre class="r"><code>library(lubridate) # date convert</code></pre>
+<pre class="r"><code>library(lubridate) # date convert
+library(readxl) 
+library(scales)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;scales&#39;
+## 
+## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     discard
+## 
+## The following object is masked from &#39;package:readr&#39;:
+## 
+##     col_factor</code></pre>
 <div id="promblem-1" class="section level2">
 <h2>Promblem 1</h2>
 <div id="clean-pols_month-data" class="section level3">
@@ -1534,21 +1546,16 @@ border-radius: 0px;
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>print(pols_month_df, n = 10)</code></pre>
+<pre class="r"><code>print(pols_month_df, n = 5)</code></pre>
 <pre><code>## # A tibble: 822 × 9
-##     year month     gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president
-##    &lt;int&gt; &lt;ord&gt;       &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;    
-##  1  1947 January        23      51     253      23      45     198 dem      
-##  2  1947 February       23      51     253      23      45     198 dem      
-##  3  1947 March          23      51     253      23      45     198 dem      
-##  4  1947 April          23      51     253      23      45     198 dem      
-##  5  1947 May            23      51     253      23      45     198 dem      
-##  6  1947 June           23      51     253      23      45     198 dem      
-##  7  1947 July           23      51     253      23      45     198 dem      
-##  8  1947 August         23      51     253      23      45     198 dem      
-##  9  1947 September      23      51     253      23      45     198 dem      
-## 10  1947 October        23      51     253      23      45     198 dem      
-## # ℹ 812 more rows</code></pre>
+##    year month    gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president
+##   &lt;int&gt; &lt;ord&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;    
+## 1  1947 January       23      51     253      23      45     198 dem      
+## 2  1947 February      23      51     253      23      45     198 dem      
+## 3  1947 March         23      51     253      23      45     198 dem      
+## 4  1947 April         23      51     253      23      45     198 dem      
+## 5  1947 May           23      51     253      23      45     198 dem      
+## # ℹ 817 more rows</code></pre>
 </div>
 <div id="clean-snp-data" class="section level3">
 <h3>Clean SNP Data</h3>
@@ -1580,21 +1587,16 @@ border-radius: 0px;
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>print(snp_df, n = 10)</code></pre>
+<pre class="r"><code>print(snp_df, n = 5)</code></pre>
 <pre><code>## # A tibble: 787 × 3
-##     year month     close
-##    &lt;dbl&gt; &lt;ord&gt;     &lt;dbl&gt;
-##  1  1969 January   103. 
-##  2  1969 February   98.1
-##  3  1969 March     102. 
-##  4  1969 April     104. 
-##  5  1969 May       103. 
-##  6  1969 June       97.7
-##  7  1969 July       91.8
-##  8  1969 August     95.5
-##  9  1969 September  93.1
-## 10  1969 October    97.1
-## # ℹ 777 more rows</code></pre>
+##    year month    close
+##   &lt;dbl&gt; &lt;ord&gt;    &lt;dbl&gt;
+## 1  1969 January  103. 
+## 2  1969 February  98.1
+## 3  1969 March    102. 
+## 4  1969 April    104. 
+## 5  1969 May      103. 
+## # ℹ 782 more rows</code></pre>
 </div>
 <div id="clean-unemployment-data" class="section level3">
 <h3>Clean Unemployment Data</h3>
@@ -1628,21 +1630,16 @@ border-radius: 0px;
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>print(unemployment_df, n = 10)</code></pre>
+<pre class="r"><code>print(unemployment_df, n = 5)</code></pre>
 <pre><code>## # A tibble: 816 × 3
-##     year month     unemployment_rate
-##    &lt;int&gt; &lt;ord&gt;                 &lt;dbl&gt;
-##  1  1948 January                 3.4
-##  2  1948 February                3.8
-##  3  1948 March                   4  
-##  4  1948 April                   3.9
-##  5  1948 May                     3.5
-##  6  1948 June                    3.6
-##  7  1948 July                    3.6
-##  8  1948 August                  3.9
-##  9  1948 September               3.8
-## 10  1948 October                 3.7
-## # ℹ 806 more rows</code></pre>
+##    year month    unemployment_rate
+##   &lt;int&gt; &lt;ord&gt;                &lt;dbl&gt;
+## 1  1948 January                3.4
+## 2  1948 February               3.8
+## 3  1948 March                  4  
+## 4  1948 April                  3.9
+## 5  1948 May                    3.5
+## # ℹ 811 more rows</code></pre>
 </div>
 <div id="merge-snp-into-pols" class="section level3">
 <h3>Merge SNP Into Pols</h3>
@@ -1668,22 +1665,20 @@ print(pols_snp_df)</code></pre>
 <h3>Fianlly Merging Unemployment</h3>
 <pre class="r"><code>pols_snp_unemp_df = pols_snp_df |&gt;
   left_join(unemployment_df, by = c(&quot;year&quot;, &quot;month&quot;)) 
-print(pols_snp_unemp_df, n = 10)</code></pre>
+print(pols_snp_unemp_df, n = 5)</code></pre>
 <pre><code>## # A tibble: 822 × 11
-##     year month   gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president close
-##    &lt;dbl&gt; &lt;ord&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
-##  1  1947 January      23      51     253      23      45     198 dem          NA
-##  2  1947 Februa…      23      51     253      23      45     198 dem          NA
-##  3  1947 March        23      51     253      23      45     198 dem          NA
-##  4  1947 April        23      51     253      23      45     198 dem          NA
-##  5  1947 May          23      51     253      23      45     198 dem          NA
-##  6  1947 June         23      51     253      23      45     198 dem          NA
-##  7  1947 July         23      51     253      23      45     198 dem          NA
-##  8  1947 August       23      51     253      23      45     198 dem          NA
-##  9  1947 Septem…      23      51     253      23      45     198 dem          NA
-## 10  1947 October      23      51     253      23      45     198 dem          NA
-## # ℹ 812 more rows
+##    year month    gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president close
+##   &lt;dbl&gt; &lt;ord&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1  1947 January       23      51     253      23      45     198 dem          NA
+## 2  1947 February      23      51     253      23      45     198 dem          NA
+## 3  1947 March         23      51     253      23      45     198 dem          NA
+## 4  1947 April         23      51     253      23      45     198 dem          NA
+## 5  1947 May           23      51     253      23      45     198 dem          NA
+## # ℹ 817 more rows
 ## # ℹ 1 more variable: unemployment_rate &lt;dbl&gt;</code></pre>
+</div>
+<div id="overview" class="section level3">
+<h3>Overview</h3>
 <pre class="r"><code># dplyr view
 dplyr::glimpse(pols_snp_unemp_df)</code></pre>
 <pre><code>## Rows: 822
@@ -1700,20 +1695,15 @@ dplyr::glimpse(pols_snp_unemp_df)</code></pre>
 ## $ close             &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
 ## $ unemployment_rate &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 3.4,…</code></pre>
 <pre class="r"><code># end of 10 lines
-tail(pols_snp_unemp_df, 10) </code></pre>
-<pre><code>## # A tibble: 10 × 11
-##     year month   gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president close
-##    &lt;dbl&gt; &lt;ord&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
-##  1  2014 Septem…      29      45     234      21      53     199 dem       1972.
-##  2  2014 October      29      45     234      21      53     199 dem       2018.
-##  3  2014 Novemb…      29      45     235      21      53     201 dem       2068.
-##  4  2014 Decemb…      29      45     235      21      53     201 dem       2059.
-##  5  2015 January      31      54     245      18      44     188 dem       1995.
-##  6  2015 Februa…      31      54     245      18      44     188 dem       2104.
-##  7  2015 March        31      54     245      18      44     188 dem       2068.
-##  8  2015 April        31      54     244      18      44     188 dem       2086.
-##  9  2015 May          31      54     245      18      44     188 dem       2107.
-## 10  2015 June         31      54     246      18      44     188 dem       2063.
+tail(pols_snp_unemp_df, 5) </code></pre>
+<pre><code>## # A tibble: 5 × 11
+##    year month    gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem president close
+##   &lt;dbl&gt; &lt;ord&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1  2015 February      31      54     245      18      44     188 dem       2104.
+## 2  2015 March         31      54     245      18      44     188 dem       2068.
+## 3  2015 April         31      54     244      18      44     188 dem       2086.
+## 4  2015 May           31      54     245      18      44     188 dem       2107.
+## 5  2015 June          31      54     246      18      44     188 dem       2063.
 ## # ℹ 1 more variable: unemployment_rate &lt;dbl&gt;</code></pre>
 <pre class="r"><code># see missing value
 colSums(is.na(pols_snp_unemp_df))</code></pre>
@@ -1724,7 +1714,7 @@ colSums(is.na(pols_snp_unemp_df))</code></pre>
 ##         president             close unemployment_rate 
 ##                 0               264                12</code></pre>
 <pre class="r"><code># see the table 
-View(pols_snp_unemp_df)</code></pre>
+# View(pols_snp_unemp_df)</code></pre>
 <p>The pols-month dataset records the number of political party
 representatives in the U.S. by month. The snp dataset gives the closing
 price of the S&amp;P 500 on the last trading day of each month. The
@@ -1741,8 +1731,169 @@ years, and the unemployment rate is missing in a few months.</p>
 </div>
 <div id="promblem-2" class="section level2">
 <h2>Promblem 2</h2>
-<div id="clean-mr.-trash-wheel-sheet" class="section level3">
-<h3>Clean Mr. Trash Wheel Sheet</h3>
+<div id="clean-mr.trash-wheel-sheet" class="section level3">
+<h3>Clean Mr.Trash Wheel Sheet</h3>
+<pre class="r"><code>trash_path &lt;- &quot;./202409 Trash Wheel Collection Data.xlsx&quot;
+
+mr_trash_df &lt;-
+  read_excel(
+    path = trash_path,
+    sheet = &quot;Mr. Trash Wheel&quot;,
+    range = readxl::cell_cols(&quot;A:N&quot;),
+    na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;),
+    ) |&gt;
+  # Use reasonable variable names
+  clean_names() |&gt;
+  # Convert Date type
+  mutate(date = as_date(date)) |&gt;
+  # Omit rows that do not include dumpster-specific data
+  filter(!is.na(dumpster), !is.na(date)) |&gt;
+  # Round the number of sports balls 
+  dplyr::mutate(sports_balls = as.integer(round(sports_balls))) |&gt;
+  mutate(wheel = &quot;Mr.Trash Wheel&quot;) |&gt;
+  relocate(wheel, .before = 1)</code></pre>
+</div>
+<div id="clean-professor-trash-wheel-sheet" class="section level3">
+<h3>Clean Professor Trash Wheel Sheet</h3>
+<pre class="r"><code>prof_trash_df &lt;-
+  read_excel(
+    path  = trash_path,
+    sheet = &quot;Professor Trash Wheel&quot;,
+    range = readxl::cell_cols(&quot;A:M&quot;),
+    na    = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;)
+  ) |&gt;
+  clean_names() |&gt;
+  mutate(date = as_date(date)) |&gt;
+  filter(!is.na(dumpster), !is.na(date)) |&gt;
+  mutate(wheel = &quot;Professor Trash Wheel&quot;) |&gt;
+  relocate(wheel, .before = 1)</code></pre>
+</div>
+<div id="clean-gwynnda-sheet" class="section level3">
+<h3>Clean Gwynnda Sheet</h3>
+<pre class="r"><code>gwynnda_trash_df &lt;-
+  read_excel(
+    path  = trash_path,
+    sheet = &quot;Gwynnda Trash Wheel&quot;,
+    range = readxl::cell_cols(&quot;A:L&quot;),
+    na    = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;)
+  ) |&gt;
+  clean_names() |&gt;
+  mutate(date = as_date(date)) |&gt;
+  filter(!is.na(dumpster), !is.na(date)) |&gt;
+  mutate(wheel = &quot;Gwynnda&quot;) |&gt;
+  relocate(wheel, .before = 1)</code></pre>
+</div>
+<div id="merge" class="section level3">
+<h3>Merge</h3>
+<pre class="r"><code># 1)  Standardize The Date Types In Each Sheet
+mr_trash_df &lt;- mr_trash_df |&gt;
+  
+  # Rebuild Consistent Types Dates
+  select(-any_of(c(&quot;year&quot;, &quot;month&quot;))) |&gt;
+  mutate(
+    date  = lubridate::as_date(date),
+    year  = as.integer(lubridate::year(date)),
+    month = factor(lubridate::month(date, label = TRUE, abbr = FALSE),
+                   levels = month.name, ordered = TRUE)
+  )
+
+prof_trash_df &lt;- prof_trash_df |&gt;
+  select(-any_of(c(&quot;year&quot;, &quot;month&quot;))) |&gt;
+  mutate(
+    date  = lubridate::as_date(date),
+    year  = as.integer(lubridate::year(date)),
+    month = factor(lubridate::month(date, label = TRUE, abbr = FALSE),
+                   levels = month.name, ordered = TRUE)
+  )
+
+gwynnda_trash_df &lt;- gwynnda_trash_df |&gt;
+  select(-any_of(c(&quot;year&quot;, &quot;month&quot;))) |&gt;
+  mutate(
+    date  = lubridate::as_date(date),
+    year  = as.integer(lubridate::year(date)),
+    month = factor(lubridate::month(date, label = TRUE, abbr = FALSE),
+                   levels = month.name, ordered = TRUE)
+  )
+
+
+# Merge
+common_vars &lt;- Reduce(intersect, list(
+  names(mr_trash_df), names(prof_trash_df), names(gwynnda_trash_df)
+))
+
+mr_trash_df      &lt;- dplyr::select(mr_trash_df,      all_of(common_vars))
+prof_trash_df    &lt;- dplyr::select(prof_trash_df,    all_of(common_vars))
+gwynnda_trash_df &lt;- dplyr::select(gwynnda_trash_df, all_of(common_vars))
+
+trash_all &lt;- dplyr::bind_rows(
+  mr_trash_df,
+  prof_trash_df,
+  gwynnda_trash_df
+) |&gt;
+  arrange(date, wheel, dumpster)
+
+glimpse(trash_all)</code></pre>
+<pre><code>## Rows: 1,032
+## Columns: 13
+## $ wheel              &lt;chr&gt; &quot;Mr.Trash Wheel&quot;, &quot;Mr.Trash Wheel&quot;, &quot;Mr.Trash Wheel…
+## $ dumpster           &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, …
+## $ date               &lt;date&gt; 2014-05-16, 2014-05-16, 2014-05-16, 2014-05-17, 20…
+## $ weight_tons        &lt;dbl&gt; 4.31, 2.74, 3.45, 3.10, 4.06, 2.71, 1.91, 3.70, 2.5…
+## $ volume_cubic_yards &lt;dbl&gt; 18, 13, 15, 15, 18, 13, 8, 16, 14, 18, 15, 19, 15, …
+## $ plastic_bottles    &lt;dbl&gt; 1450, 1120, 2450, 2380, 980, 1430, 910, 3580, 2400,…
+## $ polystyrene        &lt;dbl&gt; 1820, 1030, 3100, 2730, 870, 2140, 1090, 4310, 2790…
+## $ cigarette_butts    &lt;dbl&gt; 126000, 91000, 105000, 100000, 120000, 90000, 56000…
+## $ plastic_bags       &lt;dbl&gt; 584, 496, 1080, 896, 368, 672, 416, 1552, 984, 448,…
+## $ wrappers           &lt;dbl&gt; 1162, 874, 2032, 1971, 753, 1144, 692, 3015, 1988, …
+## $ homes_powered      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+## $ year               &lt;int&gt; 2014, 2014, 2014, 2014, 2014, 2014, 2014, 2014, 201…
+## $ month              &lt;ord&gt; May, May, May, May, May, May, May, May, June, June,…</code></pre>
+<pre class="r"><code>colSums(is.na(trash_all))</code></pre>
+<pre><code>##              wheel           dumpster               date        weight_tons 
+##                  0                  0                  0                  0 
+## volume_cubic_yards    plastic_bottles        polystyrene    cigarette_butts 
+##                  0                  1                  1                  1 
+##       plastic_bags           wrappers      homes_powered               year 
+##                  1                118                 69                  0 
+##              month 
+##                  0</code></pre>
+</div>
+<div id="calculate" class="section level3">
+<h3>Calculate</h3>
+<p>Total Weight Of Trash Collected By Professor Trash Wheel</p>
+<pre class="r"><code>prof_total_weight &lt;- trash_all |&gt;
+  filter(wheel == &quot;Professor Trash Wheel&quot;) |&gt;
+  summarise(total_weight_tons = sum(weight_tons, na.rm = TRUE)) |&gt;
+  pull(total_weight_tons)</code></pre>
+<p>Total Number Of Cigarette Collected By Gwynnda In June 2022</p>
+<pre class="r"><code>gwynnda_cigs_jun2022 &lt;- trash_all |&gt;
+  filter(wheel == &quot;Gwynnda&quot;, year(date) == 2022, month(date) == 6) |&gt;
+  summarise(total_cigarette_butts = sum(cigarette_butts, na.rm = TRUE)) |&gt;
+  pull(total_cigarette_butts)</code></pre>
+</div>
+<div id="overview-1" class="section level3">
+<h3>Overview</h3>
+<pre class="r"><code>n_obs      &lt;- nrow(trash_all)
+date_range &lt;- range(trash_all$date, na.rm = TRUE)
+
+prof_total_weight</code></pre>
+<pre><code>## [1] 246.74</code></pre>
+<pre class="r"><code>gwynnda_cigs_jun2022</code></pre>
+<pre><code>## [1] 18120</code></pre>
+<pre class="r"><code>n_obs</code></pre>
+<pre><code>## [1] 1032</code></pre>
+<pre class="r"><code>date_range</code></pre>
+<pre><code>## [1] &quot;2014-05-16&quot; &quot;2024-06-11&quot;</code></pre>
+<p>In the cleaned and combined Trash Wheel dataset, there are 1,032
+observations spanning May 2014 to Jun 2024. Each row records a dumpster
+collection with key variables such as <code>dumpster</code> (load ID),
+<code>date</code>, <code>weight_tons</code> (trash weight in tons),
+<code>volume_cubic_yards</code> (volume), and composition counts
+including <code>cigarette_butts</code>, <code>plastic_bottles</code>,
+and <code>wrappers</code>.</p>
+<p>Based on available data, <strong>Professor Trash Wheel</strong>
+collected a total of 247 tons of trash, and <strong>Gwynnda</strong>
+collected 18,120 cigarette butts in <strong>June 2022</strong>.</p>
 </div>
 </div>
 
