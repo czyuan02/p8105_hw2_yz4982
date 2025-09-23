@@ -9,11 +9,66 @@ output:
 
 ```{r library}
 library(tidyverse)
+library(janitor)
+library(lubridate) # date convert
 ```
 
 Promblem 1
 ------------------------------------------------------------
-### clean data
-```{r load-weather}
+### clean pols_month_df data
+```{r}
+pols_month_df = 
+  read_csv("fivethirtyeight_datasets/pols-month.csv", 
+           na = c("NA", ".", "")) |>
+  janitor::clean_names() |>
+  
+  # break up the month-year-day variable
+  tidyr::separate(mon, into = c("year", "month", "day"),
+                  sep = "-", convert = TRUE) |>
+  mutate(
+    
+    # replace month number with month name
+    month = month.name[month],
+    month = factor(month, levels = month.name, ordered = TRUE),
+    
+    # create a president variable, taking values gop and dem
+    president = if_else(prez_gop == 1, "gop", "dem")) |>
+  
+  # remove prez_dem and prez_gop and the day variable
+  select(-prez_gop, -prez_dem, -day)
+
+print(pols_month_df, n = 10)
+```
+
+### clean snp data
+```{r} 
+snp_df = 
+  read_csv("fivethirtyeight_datasets/snp.csv", 
+           na = c("NA", ".", "")) |>
+  janitor::clean_names() |>
+  
+  # Convert to year-month-day
+  mutate(date = mdy(date)) |>
+  
+  # Arrange according to year and month,
+  mutate(
+    year  = year(date),
+    month = month(date),
+    month = month.name[month],
+    month = factor(month, levels = month.name, ordered = TRUE),
+    day   = mday(date)
+  ) |>
+  
+  # Year and month are the leading columns
+  select(year, month, day, close) |>
+  arrange(year, month)
+
+print(snp_df, n = 10)
+
+```
+
+### clean snp data
+```{r}
+
 
 ```
