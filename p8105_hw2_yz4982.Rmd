@@ -1,0 +1,13 @@
+---
+title: "p8105_hw2_yz4982"
+author: "Yuanyuan Zhang"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+Promblem 1
+------------------------------------------------------------
+### clean the data 
+```{r load-weather}
