@@ -280,7 +280,7 @@ Based on available data, **Professor Trash Wheel** collected a total of `r comma
 
 Promblem 3
 ------------------------------------------------------------
-### 
+### Clean
 ```{r}
 
 ```
