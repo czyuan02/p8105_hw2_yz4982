@@ -374,6 +374,6 @@ cat("缺失比例 - zori:    ", round(mean(is.na(final_df$zori))*100, 1), "%\n",
 print(utils::head(final_df, 10))
 
 # Output
-readr::write_csv(final_df, "nyc_zori_2015_2024_clean.csv")
+readr::write_csv(final_df, "nyc_zori_clean.csv")
 cat("Already download nyc_zori_2015_2024_clean.csv\n")
 ```
