@@ -230,8 +230,8 @@ common_vars <- Reduce(intersect, list(
   names(mr_trash_df), names(prof_trash_df), names(gwynnda_trash_df)
 ))
 
-mr_trash_df      <- dplyr::select(mr_trash_df,      all_of(common_vars))
-prof_trash_df    <- dplyr::select(prof_trash_df,    all_of(common_vars))
+mr_trash_df <- dplyr::select(mr_trash_df,      all_of(common_vars))
+prof_trash_df <- dplyr::select(prof_trash_df,    all_of(common_vars))
 gwynnda_trash_df <- dplyr::select(gwynnda_trash_df, all_of(common_vars))
 
 trash_all <- dplyr::bind_rows(
@@ -280,7 +280,100 @@ Based on available data, **Professor Trash Wheel** collected a total of `r comma
 
 Promblem 3
 ------------------------------------------------------------
-### Clean
+### Clean data
 ```{r}
+zori_path_df = 
+  read_csv("zillow_data/Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv",
+           na = c("NA", ".", ""))
 
+zipinfo_df =
+  read_csv("zillow_data/Zip Codes.csv",
+           na = c("NA", ".", ""))
+```
+
+### Identify date columns and the ZIP column name in Zillow
+```{r}
+# Selects all column names that look like dates
+date_cols <- names(zori_path_df)[grepl("^\\d{4}-\\d{2}-\\d{2}$", names(zori_path_df))]
+
+zip_col_in_zillow <- if ("RegionName" %in% names(zori_path_df)) "RegionName" else NA
+```
+
+### Convert Zillow data to long format
+```{r}
+zori_long <- tidyr::pivot_longer(
+  data      = zori_path_df,
+  cols      = date_cols,
+  names_to  = "month",
+  values_to = "zori"
+)
+
+zori_long$zip   <- stringr::str_pad(as.character(zori_long[[zip_col_in_zillow]]), width = 5, pad = "0")
+zori_long$month <- lubridate::ymd(zori_long$month)
+```
+
+### Filter time range 2015-01 to 2024-08
+```{r}
+zori_long$month <- lubridate::ymd(zori_long$month)
+
+zori_long <- zori_long[zori_long$month >= ymd("2015-01-01") &
+                       zori_long$month <= ymd("2024-08-31"), ]
+```
+
+```{r}
+## Standardize ZIP
+zipinfo_df$zip <- stringr::str_pad(as.character(zipinfo_df$ZipCode), width = 5, pad = "0")
+
+## Remove duplicate
+zipinfo_clean <- unique(
+  data.frame(
+    zip          = zipinfo_df$zip,
+    county       = trimws(as.character(zipinfo_df$County)),
+    neighborhood = trimws(as.character(zipinfo_df$Neighborhood)),
+    stringsAsFactors = FALSE
+  )
+)
+
+# Merge
+merged_df <- merge(zori_long, zipinfo_clean, by = "zip", all.x = TRUE)
+
+# County Selection
+county_any <- merged_df$CountyName
+county_any[is.na(county_any) | trimws(as.character(county_any)) == ""] <- merged_df$county
+merged_df$county_clean <- trimws(as.character(county_any))
+
+# Borough 
+merged_df$county_clean <- gsub("\\s*County$", "", merged_df$county_clean, ignore.case = TRUE)
+merged_df$county_clean <- tools::toTitleCase(tolower(merged_df$county_clean))
+
+county_map_names  <- c("New York","Kings","Queens","Bronx","Richmond")
+county_map_values <- c("Manhattan","Brooklyn","Queens","Bronx","Staten Island")
+merged_df$borough <- unname(county_map_values[ match(merged_df$county_clean, county_map_names) ])
+
+# Order
+meta_want <- c("RegionID","SizeRank","RegionType","StateName","State","City","Metro","CountyName")
+meta_keep <- meta_want[meta_want %in% names(merged_df)]
+
+keep_cols <- c("month","borough","county_clean","neighborhood","zip","zori", meta_keep)
+keep_cols <- keep_cols[keep_cols %in% names(merged_df)]
+
+final_df <- merged_df[ , keep_cols, drop = FALSE]
+
+ord <- order(final_df$month, final_df$borough, final_df$neighborhood, final_df$zip, na.last = TRUE)
+final_df <- final_df[ord, , drop = FALSE]
+
+# Check
+cat("Total Row: ", nrow(final_df), "\n", sep = "")
+cat("Different ZIP numbers: ", length(unique(final_df$zip)), "\n", sep = "")
+cat("Time range: ", as.character(min(final_df$month, na.rm = TRUE)),
+    " ~ ", as.character(max(final_df$month, na.rm = TRUE)), "\n", sep = "")
+cat("缺失比例 - borough: ", round(mean(is.na(final_df$borough))*100, 1), "%\n", sep = "")
+cat("缺失比例 - county:  ", round(mean(is.na(final_df$county_clean))*100, 1), "%\n", sep = "")
+cat("缺失比例 - neigh.:  ", round(mean(is.na(final_df$neighborhood))*100, 1), "%\n", sep = "")
+cat("缺失比例 - zori:    ", round(mean(is.na(final_df$zori))*100, 1), "%\n", sep = "")
+print(utils::head(final_df, 10))
+
+# Output
+readr::write_csv(final_df, "nyc_zori_2015_2024_clean.csv")
+cat("Already download nyc_zori_2015_2024_clean.csv\n")
 ```

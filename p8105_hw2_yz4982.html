@@ -1821,8 +1821,8 @@ common_vars &lt;- Reduce(intersect, list(
   names(mr_trash_df), names(prof_trash_df), names(gwynnda_trash_df)
 ))
 
-mr_trash_df      &lt;- dplyr::select(mr_trash_df,      all_of(common_vars))
-prof_trash_df    &lt;- dplyr::select(prof_trash_df,    all_of(common_vars))
+mr_trash_df &lt;- dplyr::select(mr_trash_df,      all_of(common_vars))
+prof_trash_df &lt;- dplyr::select(prof_trash_df,    all_of(common_vars))
 gwynnda_trash_df &lt;- dplyr::select(gwynnda_trash_df, all_of(common_vars))
 
 trash_all &lt;- dplyr::bind_rows(
@@ -1894,6 +1894,166 @@ and <code>wrappers</code>.</p>
 <p>Based on available data, <strong>Professor Trash Wheel</strong>
 collected a total of 247 tons of trash, and <strong>Gwynnda</strong>
 collected 18,120 cigarette butts in <strong>June 2022</strong>.</p>
+</div>
+</div>
+<div id="promblem-3" class="section level2">
+<h2>Promblem 3</h2>
+<div id="clean-data" class="section level3">
+<h3>Clean data</h3>
+<pre class="r"><code>zori_path_df = 
+  read_csv(&quot;zillow_data/Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv&quot;,
+           na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;))</code></pre>
+<pre><code>## Rows: 149 Columns: 125
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr   (6): RegionType, StateName, State, City, Metro, CountyName
+## dbl (119): RegionID, SizeRank, RegionName, 2015-01-31, 2015-02-28, 2015-03-3...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>zipinfo_df =
+  read_csv(&quot;zillow_data/Zip Codes.csv&quot;,
+           na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;))</code></pre>
+<pre><code>## Rows: 322 Columns: 7
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (4): County, County Code, File Date, Neighborhood
+## dbl (3): State FIPS, County FIPS, ZipCode
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div id="identify-date-columns-and-the-zip-column-name-in-zillow" class="section level3">
+<h3>Identify date columns and the ZIP column name in Zillow</h3>
+<pre class="r"><code># Selects all column names that look like dates
+date_cols &lt;- names(zori_path_df)[grepl(&quot;^\\d{4}-\\d{2}-\\d{2}$&quot;, names(zori_path_df))]
+
+zip_col_in_zillow &lt;- if (&quot;RegionName&quot; %in% names(zori_path_df)) &quot;RegionName&quot; else NA</code></pre>
+</div>
+<div id="convert-zillow-data-to-long-format" class="section level3">
+<h3>Convert Zillow data to long format</h3>
+<pre class="r"><code>zori_long &lt;- tidyr::pivot_longer(
+  data      = zori_path_df,
+  cols      = date_cols,
+  names_to  = &quot;month&quot;,
+  values_to = &quot;zori&quot;
+)</code></pre>
+<pre><code>## Warning: Using an external vector in selections was deprecated in tidyselect 1.1.0.
+## ℹ Please use `all_of()` or `any_of()` instead.
+##   # Was:
+##   data %&gt;% select(date_cols)
+## 
+##   # Now:
+##   data %&gt;% select(all_of(date_cols))
+## 
+## See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
+<pre class="r"><code>zori_long$zip   &lt;- stringr::str_pad(as.character(zori_long[[zip_col_in_zillow]]), width = 5, pad = &quot;0&quot;)
+zori_long$month &lt;- lubridate::ymd(zori_long$month)</code></pre>
+</div>
+<div id="filter-time-range-2015-01-to-2024-08" class="section level3">
+<h3>Filter time range 2015-01 to 2024-08</h3>
+<pre class="r"><code>zori_long$month &lt;- lubridate::ymd(zori_long$month)
+
+zori_long &lt;- zori_long[zori_long$month &gt;= ymd(&quot;2015-01-01&quot;) &amp;
+                       zori_long$month &lt;= ymd(&quot;2024-08-31&quot;), ]</code></pre>
+<pre class="r"><code>## Standardize ZIP
+zipinfo_df$zip &lt;- stringr::str_pad(as.character(zipinfo_df$ZipCode), width = 5, pad = &quot;0&quot;)
+
+## Remove duplicate
+zipinfo_clean &lt;- unique(
+  data.frame(
+    zip          = zipinfo_df$zip,
+    county       = trimws(as.character(zipinfo_df$County)),
+    neighborhood = trimws(as.character(zipinfo_df$Neighborhood)),
+    stringsAsFactors = FALSE
+  )
+)
+
+# Merge
+merged_df &lt;- merge(zori_long, zipinfo_clean, by = &quot;zip&quot;, all.x = TRUE)
+
+# County Selection
+county_any &lt;- merged_df$CountyName
+county_any[is.na(county_any) | trimws(as.character(county_any)) == &quot;&quot;] &lt;- merged_df$county
+merged_df$county_clean &lt;- trimws(as.character(county_any))
+
+# Borough 
+merged_df$county_clean &lt;- gsub(&quot;\\s*County$&quot;, &quot;&quot;, merged_df$county_clean, ignore.case = TRUE)
+merged_df$county_clean &lt;- tools::toTitleCase(tolower(merged_df$county_clean))
+
+county_map_names  &lt;- c(&quot;New York&quot;,&quot;Kings&quot;,&quot;Queens&quot;,&quot;Bronx&quot;,&quot;Richmond&quot;)
+county_map_values &lt;- c(&quot;Manhattan&quot;,&quot;Brooklyn&quot;,&quot;Queens&quot;,&quot;Bronx&quot;,&quot;Staten Island&quot;)
+merged_df$borough &lt;- unname(county_map_values[ match(merged_df$county_clean, county_map_names) ])
+
+# Order
+meta_want &lt;- c(&quot;RegionID&quot;,&quot;SizeRank&quot;,&quot;RegionType&quot;,&quot;StateName&quot;,&quot;State&quot;,&quot;City&quot;,&quot;Metro&quot;,&quot;CountyName&quot;)
+meta_keep &lt;- meta_want[meta_want %in% names(merged_df)]
+
+keep_cols &lt;- c(&quot;month&quot;,&quot;borough&quot;,&quot;county_clean&quot;,&quot;neighborhood&quot;,&quot;zip&quot;,&quot;zori&quot;, meta_keep)
+keep_cols &lt;- keep_cols[keep_cols %in% names(merged_df)]
+
+final_df &lt;- merged_df[ , keep_cols, drop = FALSE]
+
+ord &lt;- order(final_df$month, final_df$borough, final_df$neighborhood, final_df$zip, na.last = TRUE)
+final_df &lt;- final_df[ord, , drop = FALSE]
+
+# Check
+cat(&quot;Total Row: &quot;, nrow(final_df), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## Total Row: 17516</code></pre>
+<pre class="r"><code>cat(&quot;Different ZIP numbers: &quot;, length(unique(final_df$zip)), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## Different ZIP numbers: 149</code></pre>
+<pre class="r"><code>cat(&quot;Time range: &quot;, as.character(min(final_df$month, na.rm = TRUE)),
+    &quot; ~ &quot;, as.character(max(final_df$month, na.rm = TRUE)), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## Time range: 2015-01-31 ~ 2024-08-31</code></pre>
+<pre class="r"><code>cat(&quot;缺失比例 - borough: &quot;, round(mean(is.na(final_df$borough))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## 缺失比例 - borough: 0%</code></pre>
+<pre class="r"><code>cat(&quot;缺失比例 - county:  &quot;, round(mean(is.na(final_df$county_clean))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## 缺失比例 - county:  0%</code></pre>
+<pre class="r"><code>cat(&quot;缺失比例 - neigh.:  &quot;, round(mean(is.na(final_df$neighborhood))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## 缺失比例 - neigh.:  3.3%</code></pre>
+<pre class="r"><code>cat(&quot;缺失比例 - zori:    &quot;, round(mean(is.na(final_df$zori))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## 缺失比例 - zori:    39%</code></pre>
+<pre class="r"><code>print(utils::head(final_df, 10))</code></pre>
+<pre><code>##           month borough county_clean               neighborhood   zip zori
+## 6961 2015-01-31   Bronx        Bronx     Bronx Park and Fordham 10458   NA
+## 8005 2015-01-31   Bronx        Bronx     Bronx Park and Fordham 10467   NA
+## 8121 2015-01-31   Bronx        Bronx     Bronx Park and Fordham 10468   NA
+## 6381 2015-01-31   Bronx        Bronx              Central Bronx 10453   NA
+## 6845 2015-01-31   Bronx        Bronx              Central Bronx 10457   NA
+## 7193 2015-01-31   Bronx        Bronx              Central Bronx 10460   NA
+## 6149 2015-01-31   Bronx        Bronx High Bridge and Morrisania 10451   NA
+## 6265 2015-01-31   Bronx        Bronx High Bridge and Morrisania 10452   NA
+## 6729 2015-01-31   Bronx        Bronx High Bridge and Morrisania 10456   NA
+## 6497 2015-01-31   Bronx        Bronx Hunts Point and Mott Haven 10454   NA
+##      RegionID SizeRank RegionType StateName State     City
+## 6961    61798       63        zip        NY    NY New York
+## 8005    61807       17        zip        NY    NY New York
+## 8121    61808       95        zip        NY    NY New York
+## 6381    61793       84        zip        NY    NY New York
+## 6845    61797      107        zip        NY    NY New York
+## 7193    61800      462        zip        NY    NY New York
+## 6149    61791      838        zip        NY    NY New York
+## 6265    61792      112        zip        NY    NY New York
+## 6729    61796       49        zip        NY    NY New York
+## 6497    61794     2018        zip        NY    NY New York
+##                                      Metro   CountyName
+## 6961 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 8005 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 8121 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 6381 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 6845 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 7193 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 6149 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 6265 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 6729 New York-Newark-Jersey City, NY-NJ-PA Bronx County
+## 6497 New York-Newark-Jersey City, NY-NJ-PA Bronx County</code></pre>
+<pre class="r"><code># Output
+readr::write_csv(final_df, &quot;nyc_zori_2015_2024_clean.csv&quot;)
+cat(&quot;Already download nyc_zori_2015_2024_clean.csv\n&quot;)</code></pre>
+<pre><code>## Already download nyc_zori_2015_2024_clean.csv</code></pre>
 </div>
 </div>
 
