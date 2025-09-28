@@ -1972,15 +1972,14 @@ zipinfo_clean &lt;- unique(
   )
 )
 
-# Merge
-merged_df &lt;- merge(zori_long, zipinfo_clean, by = &quot;zip&quot;, all.x = TRUE)
-
-# County Selection
+# Merge Zillow long panel zori_long with the ZIP on zip.
+merged_df &lt;- merge(zori_long, zipinfo_clean, by = &quot;zip&quot;, all.x = TRUE)</code></pre>
+<pre class="r"><code># County Selection
 county_any &lt;- merged_df$CountyName
 county_any[is.na(county_any) | trimws(as.character(county_any)) == &quot;&quot;] &lt;- merged_df$county
 merged_df$county_clean &lt;- trimws(as.character(county_any))
 
-# Borough 
+# Borough match
 merged_df$county_clean &lt;- gsub(&quot;\\s*County$&quot;, &quot;&quot;, merged_df$county_clean, ignore.case = TRUE)
 merged_df$county_clean &lt;- tools::toTitleCase(tolower(merged_df$county_clean))
 
@@ -1988,7 +1987,7 @@ county_map_names  &lt;- c(&quot;New York&quot;,&quot;Kings&quot;,&quot;Queens&qu
 county_map_values &lt;- c(&quot;Manhattan&quot;,&quot;Brooklyn&quot;,&quot;Queens&quot;,&quot;Bronx&quot;,&quot;Staten Island&quot;)
 merged_df$borough &lt;- unname(county_map_values[ match(merged_df$county_clean, county_map_names) ])
 
-# Order
+# Orders rows
 meta_want &lt;- c(&quot;RegionID&quot;,&quot;SizeRank&quot;,&quot;RegionType&quot;,&quot;StateName&quot;,&quot;State&quot;,&quot;City&quot;,&quot;Metro&quot;,&quot;CountyName&quot;)
 meta_keep &lt;- meta_want[meta_want %in% names(merged_df)]
 
@@ -1998,9 +1997,8 @@ keep_cols &lt;- keep_cols[keep_cols %in% names(merged_df)]
 final_df &lt;- merged_df[ , keep_cols, drop = FALSE]
 
 ord &lt;- order(final_df$month, final_df$borough, final_df$neighborhood, final_df$zip, na.last = TRUE)
-final_df &lt;- final_df[ord, , drop = FALSE]
-
-# Check
+final_df &lt;- final_df[ord, , drop = FALSE]</code></pre>
+<pre class="r"><code># Check
 cat(&quot;Total Row: &quot;, nrow(final_df), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
 <pre><code>## Total Row: 17516</code></pre>
 <pre class="r"><code>cat(&quot;Different ZIP numbers: &quot;, length(unique(final_df$zip)), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
@@ -2016,44 +2014,29 @@ cat(&quot;Total Row: &quot;, nrow(final_df), &quot;\n&quot;, sep = &quot;&quot;)
 <pre><code>## 缺失比例 - neigh.:  3.3%</code></pre>
 <pre class="r"><code>cat(&quot;缺失比例 - zori:    &quot;, round(mean(is.na(final_df$zori))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
 <pre><code>## 缺失比例 - zori:    39%</code></pre>
-<pre class="r"><code>print(utils::head(final_df, 10))</code></pre>
-<pre><code>##           month borough county_clean               neighborhood   zip zori
-## 6961 2015-01-31   Bronx        Bronx     Bronx Park and Fordham 10458   NA
-## 8005 2015-01-31   Bronx        Bronx     Bronx Park and Fordham 10467   NA
-## 8121 2015-01-31   Bronx        Bronx     Bronx Park and Fordham 10468   NA
-## 6381 2015-01-31   Bronx        Bronx              Central Bronx 10453   NA
-## 6845 2015-01-31   Bronx        Bronx              Central Bronx 10457   NA
-## 7193 2015-01-31   Bronx        Bronx              Central Bronx 10460   NA
-## 6149 2015-01-31   Bronx        Bronx High Bridge and Morrisania 10451   NA
-## 6265 2015-01-31   Bronx        Bronx High Bridge and Morrisania 10452   NA
-## 6729 2015-01-31   Bronx        Bronx High Bridge and Morrisania 10456   NA
-## 6497 2015-01-31   Bronx        Bronx Hunts Point and Mott Haven 10454   NA
-##      RegionID SizeRank RegionType StateName State     City
-## 6961    61798       63        zip        NY    NY New York
-## 8005    61807       17        zip        NY    NY New York
-## 8121    61808       95        zip        NY    NY New York
-## 6381    61793       84        zip        NY    NY New York
-## 6845    61797      107        zip        NY    NY New York
-## 7193    61800      462        zip        NY    NY New York
-## 6149    61791      838        zip        NY    NY New York
-## 6265    61792      112        zip        NY    NY New York
-## 6729    61796       49        zip        NY    NY New York
-## 6497    61794     2018        zip        NY    NY New York
+<pre class="r"><code>print(utils::head(final_df, 5))</code></pre>
+<pre><code>##           month borough county_clean           neighborhood   zip zori RegionID
+## 6961 2015-01-31   Bronx        Bronx Bronx Park and Fordham 10458   NA    61798
+## 8005 2015-01-31   Bronx        Bronx Bronx Park and Fordham 10467   NA    61807
+## 8121 2015-01-31   Bronx        Bronx Bronx Park and Fordham 10468   NA    61808
+## 6381 2015-01-31   Bronx        Bronx          Central Bronx 10453   NA    61793
+## 6845 2015-01-31   Bronx        Bronx          Central Bronx 10457   NA    61797
+##      SizeRank RegionType StateName State     City
+## 6961       63        zip        NY    NY New York
+## 8005       17        zip        NY    NY New York
+## 8121       95        zip        NY    NY New York
+## 6381       84        zip        NY    NY New York
+## 6845      107        zip        NY    NY New York
 ##                                      Metro   CountyName
 ## 6961 New York-Newark-Jersey City, NY-NJ-PA Bronx County
 ## 8005 New York-Newark-Jersey City, NY-NJ-PA Bronx County
 ## 8121 New York-Newark-Jersey City, NY-NJ-PA Bronx County
 ## 6381 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 6845 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 7193 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 6149 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 6265 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 6729 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 6497 New York-Newark-Jersey City, NY-NJ-PA Bronx County</code></pre>
+## 6845 New York-Newark-Jersey City, NY-NJ-PA Bronx County</code></pre>
 <pre class="r"><code># Output
 readr::write_csv(final_df, &quot;nyc_zori_clean.csv&quot;)
-cat(&quot;Already download nyc_zori_2015_2024_clean.csv\n&quot;)</code></pre>
-<pre><code>## Already download nyc_zori_2015_2024_clean.csv</code></pre>
+cat(&quot;Already download nyc_zori_clean.csv\n&quot;)</code></pre>
+<pre><code>## Already download nyc_zori_clean.csv</code></pre>
 </div>
 </div>
 

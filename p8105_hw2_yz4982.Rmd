@@ -336,7 +336,9 @@ zipinfo_clean <- unique(
 
 # Merge Zillow long panel zori_long with the ZIP on zip.
 merged_df <- merge(zori_long, zipinfo_clean, by = "zip", all.x = TRUE)
+```
 
+```{r}
 # County Selection
 county_any <- merged_df$CountyName
 county_any[is.na(county_any) | trimws(as.character(county_any)) == ""] <- merged_df$county
@@ -361,7 +363,9 @@ final_df <- merged_df[ , keep_cols, drop = FALSE]
 
 ord <- order(final_df$month, final_df$borough, final_df$neighborhood, final_df$zip, na.last = TRUE)
 final_df <- final_df[ord, , drop = FALSE]
+```
 
+```{r}
 # Check
 cat("Total Row: ", nrow(final_df), "\n", sep = "")
 cat("Different ZIP numbers: ", length(unique(final_df$zip)), "\n", sep = "")
@@ -371,7 +375,7 @@ cat("缺失比例 - borough: ", round(mean(is.na(final_df$borough))*100, 1), "%\
 cat("缺失比例 - county:  ", round(mean(is.na(final_df$county_clean))*100, 1), "%\n", sep = "")
 cat("缺失比例 - neigh.:  ", round(mean(is.na(final_df$neighborhood))*100, 1), "%\n", sep = "")
 cat("缺失比例 - zori:    ", round(mean(is.na(final_df$zori))*100, 1), "%\n", sep = "")
-print(utils::head(final_df, 10))
+print(utils::head(final_df, 5))
 
 # Output
 readr::write_csv(final_df, "nyc_zori_clean.csv")
