@@ -1977,12 +1977,16 @@ zipinfo_clean &lt;- unique(
 
 # Merge Zillow long panel zori_long with the ZIP on zip.
 merged_df &lt;- merge(zori_long, zipinfo_clean, by = &quot;zip&quot;, all.x = TRUE)</code></pre>
+</div>
+<div id="organize-variables-and-order-observations" class="section level3">
+<h3>Organize variables and order observations</h3>
 <pre class="r"><code># County Selection
 county_any &lt;- merged_df$CountyName
 county_any[is.na(county_any) | trimws(as.character(county_any)) == &quot;&quot;] &lt;- merged_df$county
 merged_df$county_clean &lt;- trimws(as.character(county_any))
 
 # Borough match
+merged_df$county_clean &lt;- gsub(&quot;\\s*County$&quot;, &quot;&quot;, merged_df$county_clean, ignore.case = TRUE)
 merged_df$county_clean &lt;- tools::toTitleCase(tolower(merged_df$county_clean))
 
 
@@ -1994,52 +1998,93 @@ merged_df$borough &lt;- unname(county_map_values[ match(merged_df$county_clean, 
 meta_want &lt;- c(&quot;RegionID&quot;,&quot;SizeRank&quot;,&quot;RegionType&quot;,&quot;StateName&quot;,&quot;State&quot;,&quot;City&quot;,&quot;Metro&quot;,&quot;CountyName&quot;)
 meta_keep &lt;- meta_want[meta_want %in% names(merged_df)]
 
-keep_cols &lt;- c(&quot;month&quot;,&quot;borough&quot;,&quot;county_clean&quot;,&quot;neighborhood&quot;,&quot;zip&quot;,&quot;zori&quot;, meta_keep)
+keep_cols &lt;- c(&quot;month&quot;,&quot;borough&quot;,&quot;county_clean&quot;,&quot;neighborhood&quot;,&quot;zip&quot;, &quot;zori&quot;, meta_keep)
 keep_cols &lt;- keep_cols[keep_cols %in% names(merged_df)]
 
 final_df &lt;- merged_df[ , keep_cols, drop = FALSE]
 
 ord &lt;- order(final_df$month, final_df$borough, final_df$neighborhood, final_df$zip, na.last = TRUE)
-final_df &lt;- final_df[ord, , drop = FALSE]</code></pre>
-<pre class="r"><code># Check
-cat(&quot;Total Row: &quot;, nrow(final_df), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## Total Row: 17516</code></pre>
-<pre class="r"><code>cat(&quot;Different ZIP numbers: &quot;, length(unique(final_df$zip)), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## Different ZIP numbers: 149</code></pre>
-<pre class="r"><code>cat(&quot;Time range: &quot;, as.character(min(final_df$month, na.rm = TRUE)),
-    &quot; ~ &quot;, as.character(max(final_df$month, na.rm = TRUE)), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## Time range: 2015-01-31 ~ 2024-08-31</code></pre>
-<pre class="r"><code>cat(&quot;缺失比例 - borough: &quot;, round(mean(is.na(final_df$borough))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## 缺失比例 - borough: 100%</code></pre>
-<pre class="r"><code>cat(&quot;缺失比例 - county:  &quot;, round(mean(is.na(final_df$county_clean))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## 缺失比例 - county:  0%</code></pre>
-<pre class="r"><code>cat(&quot;缺失比例 - neigh.:  &quot;, round(mean(is.na(final_df$neighborhood))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## 缺失比例 - neigh.:  3.3%</code></pre>
-<pre class="r"><code>cat(&quot;缺失比例 - zori:    &quot;, round(mean(is.na(final_df$zori))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## 缺失比例 - zori:    39%</code></pre>
-<pre class="r"><code>print(utils::head(final_df, 5))</code></pre>
-<pre><code>##            month borough county_clean           neighborhood   zip zori
-## 9977  2015-01-31    &lt;NA&gt; Kings County           Borough Park 11204   NA
-## 11601 2015-01-31    &lt;NA&gt; Kings County           Borough Park 11218   NA
-## 11717 2015-01-31    &lt;NA&gt; Kings County           Borough Park 11219   NA
-## 12761 2015-01-31    &lt;NA&gt; Kings County           Borough Park 11230   NA
-## 6961  2015-01-31    &lt;NA&gt; Bronx County Bronx Park and Fordham 10458   NA
-##       RegionID SizeRank RegionType StateName State     City
-## 9977     62015       91        zip        NY    NY New York
-## 11601    62029      125        zip        NY    NY New York
-## 11717    62030       43        zip        NY    NY New York
-## 12761    62040       57        zip        NY    NY New York
-## 6961     61798       63        zip        NY    NY New York
-##                                       Metro   CountyName
-## 9977  New York-Newark-Jersey City, NY-NJ-PA Kings County
-## 11601 New York-Newark-Jersey City, NY-NJ-PA Kings County
-## 11717 New York-Newark-Jersey City, NY-NJ-PA Kings County
-## 12761 New York-Newark-Jersey City, NY-NJ-PA Kings County
-## 6961  New York-Newark-Jersey City, NY-NJ-PA Bronx County</code></pre>
-<pre class="r"><code># Output
+final_df &lt;- final_df[ord, , drop = FALSE]
+
+# Output
 readr::write_csv(final_df, &quot;nyc_zori_clean.csv&quot;)
 cat(&quot;Already download nyc_zori_clean.csv\n&quot;)</code></pre>
 <pre><code>## Already download nyc_zori_clean.csv</code></pre>
+</div>
+<div id="briefly-describe" class="section level3">
+<h3>Briefly describe</h3>
+<pre class="r"><code>n_obs   &lt;- nrow(final_df)
+n_zip   &lt;- length(unique(final_df$zip))
+n_neigh &lt;- length(unique(final_df$neighborhood[!is.na(final_df$neighborhood)]))
+time_lo &lt;- min(final_df$month, na.rm = TRUE)
+time_hi &lt;- max(final_df$month, na.rm = TRUE)
+
+cat(&quot;Total observations: &quot;, n_obs, &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## Total observations: 17516</code></pre>
+<pre class="r"><code>cat(&quot;Unique ZIP codes:  &quot;, n_zip, &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## Unique ZIP codes:  149</code></pre>
+<pre class="r"><code>cat(&quot;Unique neighborhoods (non-missing): &quot;, n_neigh, &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## Unique neighborhoods (non-missing): 42</code></pre>
+<pre class="r"><code>cat(&quot;Time range: &quot;, as.character(time_lo), &quot; ~ &quot;, as.character(time_hi), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## Time range: 2015-01-31 ~ 2024-08-31</code></pre>
+<p>In the tidy NYC ZORI panel, each row is a ZIP–month observation from
+2015-01-31 to 2024-08-31. Key variables include <code>month</code>
+(Date), <code>zip</code> (5-digit ZIP), <code>borough</code>,
+<code>county_clean</code>, <code>neighborhood</code>, Zillow metadata
+(e.g., <code>RegionID</code>, <code>City</code>, <code>State</code> when
+available), and the outcome <code>zori</code> (Zillow Observed Rent
+Index for all home types: SFR/condo/multifamily).</p>
+<p>The final dataset contains <strong>17,516</strong> observations,
+covering <strong>149</strong> distinct ZIP codes and <strong>42</strong>
+distinct neighborhoods (non-missing).</p>
+</div>
+<div id="missing-zips" class="section level3">
+<h3>Missing ZIPs</h3>
+<pre class="r"><code>zips_in_zipinfo &lt;- unique(zipinfo_clean$zip)
+zips_in_zori    &lt;- unique(zori_long$zip)
+zips_only_in_zipfile &lt;- setdiff(zips_in_zipinfo, zips_in_zori)
+
+cat(&quot;ZIPs in ZIP file but NOT in Zillow: &quot;, length(zips_only_in_zipfile), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
+<pre><code>## ZIPs in ZIP file but NOT in Zillow: 171</code></pre>
+<pre class="r"><code>missing_tbl &lt;- unique(
+  zipinfo_clean[zipinfo_clean$zip %in% zips_only_in_zipfile,
+                c(&quot;zip&quot;,&quot;county&quot;,&quot;neighborhood&quot;)]
+)
+
+print(utils::head(missing_tbl, 20))</code></pre>
+<pre><code>##      zip   county               neighborhood
+## 14 10464    Bronx            Southeast Bronx
+## 24 10474    Bronx Hunts Point and Mott Haven
+## 25 10475    Bronx            Northeast Bronx
+## 26 10499    Bronx                       &lt;NA&gt;
+## 27 10550    Bronx                       &lt;NA&gt;
+## 28 10704    Bronx                       &lt;NA&gt;
+## 29 10705    Bronx                       &lt;NA&gt;
+## 30 10803    Bronx                       &lt;NA&gt;
+## 32 11202    Kings                       &lt;NA&gt;
+## 54 11224    Kings          Southern Brooklyn
+## 68 11239    Kings     Canarsie and Flatlands
+## 69 11241    Kings                       &lt;NA&gt;
+## 70 11242    Kings                       &lt;NA&gt;
+## 71 11243    Kings                       &lt;NA&gt;
+## 72 11245    Kings                       &lt;NA&gt;
+## 73 11247    Kings                       &lt;NA&gt;
+## 75 11251    Kings                       &lt;NA&gt;
+## 76 11252    Kings                       &lt;NA&gt;
+## 77 11256    Kings                       &lt;NA&gt;
+## 86 10008 New York                       &lt;NA&gt;</code></pre>
+<p>Comparing the ZIP-code crosswalk to Zillow, there are
+<strong>171</strong> ZIP codes present in the ZIP list but absent from
+the Zillow rental panel. These often correspond to ZIPs with little or
+no residential rental stock (e.g., airport facilities), PO-box or “firm”
+ZIPs, discontinued or newly created ZIPs, or areas with too few listings
+for a reliable index.</p>
+<p>For example, NYC ZIPs like <strong>11371 (LaGuardia
+Airport)</strong>, <strong>11430 (JFK Airport)</strong>, several
+<strong>101xx</strong> “firm/PO-box” ZIPs in Midtown (e.g.,
+<strong>10118</strong>, Empire State Building) commonly lack standard
+residential rental markets and may therefore be excluded by Zillow’s
+methodology.</p>
 </div>
 </div>
 

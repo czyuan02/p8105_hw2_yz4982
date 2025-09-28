@@ -339,7 +339,7 @@ zipinfo_clean <- unique(
 merged_df <- merge(zori_long, zipinfo_clean, by = "zip", all.x = TRUE)
 ```
 
-
+### Organize variables and order observations
 ```{r}
 # County Selection
 county_any <- merged_df$CountyName
@@ -359,28 +359,59 @@ merged_df$borough <- unname(county_map_values[ match(merged_df$county_clean, cou
 meta_want <- c("RegionID","SizeRank","RegionType","StateName","State","City","Metro","CountyName")
 meta_keep <- meta_want[meta_want %in% names(merged_df)]
 
-keep_cols <- c("month","borough","county_clean","neighborhood","zip","zori", meta_keep)
+keep_cols <- c("month","borough","county_clean","neighborhood","zip", "zori", meta_keep)
 keep_cols <- keep_cols[keep_cols %in% names(merged_df)]
 
 final_df <- merged_df[ , keep_cols, drop = FALSE]
 
 ord <- order(final_df$month, final_df$borough, final_df$neighborhood, final_df$zip, na.last = TRUE)
 final_df <- final_df[ord, , drop = FALSE]
-```
-
-```{r}
-# Check
-cat("Total Row: ", nrow(final_df), "\n", sep = "")
-cat("Different ZIP numbers: ", length(unique(final_df$zip)), "\n", sep = "")
-cat("Time range: ", as.character(min(final_df$month, na.rm = TRUE)),
-    " ~ ", as.character(max(final_df$month, na.rm = TRUE)), "\n", sep = "")
-cat("缺失比例 - borough: ", round(mean(is.na(final_df$borough))*100, 1), "%\n", sep = "")
-cat("缺失比例 - county:  ", round(mean(is.na(final_df$county_clean))*100, 1), "%\n", sep = "")
-cat("缺失比例 - neigh.:  ", round(mean(is.na(final_df$neighborhood))*100, 1), "%\n", sep = "")
-cat("缺失比例 - zori:    ", round(mean(is.na(final_df$zori))*100, 1), "%\n", sep = "")
-print(utils::head(final_df, 5))
 
 # Output
 readr::write_csv(final_df, "nyc_zori_clean.csv")
 cat("Already download nyc_zori_clean.csv\n")
 ```
+
+### Briefly describe
+```{r}
+n_obs   <- nrow(final_df)
+n_zip   <- length(unique(final_df$zip))
+n_neigh <- length(unique(final_df$neighborhood[!is.na(final_df$neighborhood)]))
+time_lo <- min(final_df$month, na.rm = TRUE)
+time_hi <- max(final_df$month, na.rm = TRUE)
+
+cat("Total observations: ", n_obs, "\n", sep = "")
+cat("Unique ZIP codes:  ", n_zip, "\n", sep = "")
+cat("Unique neighborhoods (non-missing): ", n_neigh, "\n", sep = "")
+cat("Time range: ", as.character(time_lo), " ~ ", as.character(time_hi), "\n", sep = "")
+
+
+```
+In the tidy NYC ZORI panel, each row is a ZIP–month observation from `r as.character(time_lo)` to `r as.character(time_hi)`. Key variables include
+`month` (Date), `zip` (5-digit ZIP), `borough`, `county_clean`, `neighborhood`, Zillow metadata (e.g., `RegionID`, `City`, `State` when available), and the outcome `zori` (Zillow Observed Rent Index for all home types: SFR/condo/multifamily).
+
+The final dataset contains **`r format(n_obs, big.mark=",")`** observations,
+covering **`r n_zip`** distinct ZIP codes and **`r n_neigh`** distinct neighborhoods
+(non-missing).
+
+
+### Missing ZIPs
+```{r}
+zips_in_zipinfo <- unique(zipinfo_clean$zip)
+zips_in_zori    <- unique(zori_long$zip)
+zips_only_in_zipfile <- setdiff(zips_in_zipinfo, zips_in_zori)
+
+cat("ZIPs in ZIP file but NOT in Zillow: ", length(zips_only_in_zipfile), "\n", sep = "")
+
+missing_tbl <- unique(
+  zipinfo_clean[zipinfo_clean$zip %in% zips_only_in_zipfile,
+                c("zip","county","neighborhood")]
+)
+
+print(utils::head(missing_tbl, 20))
+
+```
+Comparing the ZIP-code crosswalk to Zillow, there are **`r length(zips_only_in_zipfile)`** ZIP codes present in the ZIP list but absent from the Zillow rental panel. These often correspond to ZIPs with little or no residential rental stock (e.g., airport facilities), PO-box or “firm” ZIPs, discontinued or newly created ZIPs, or areas with too few listings for a reliable index. 
+
+For example, NYC ZIPs like **11371 (LaGuardia Airport)**, **11430 (JFK Airport)**, several **101xx** “firm/PO-box” ZIPs in Midtown (e.g., **10118**, Empire State Building) commonly lack standard residential rental markets and may therefore be excluded by Zillow’s methodology.
+
