@@ -334,7 +334,7 @@ zipinfo_clean <- unique(
   )
 )
 
-# Merge
+# Merge Zillow long panel zori_long with the ZIP on zip.
 merged_df <- merge(zori_long, zipinfo_clean, by = "zip", all.x = TRUE)
 
 # County Selection
@@ -342,7 +342,7 @@ county_any <- merged_df$CountyName
 county_any[is.na(county_any) | trimws(as.character(county_any)) == ""] <- merged_df$county
 merged_df$county_clean <- trimws(as.character(county_any))
 
-# Borough 
+# Borough match
 merged_df$county_clean <- gsub("\\s*County$", "", merged_df$county_clean, ignore.case = TRUE)
 merged_df$county_clean <- tools::toTitleCase(tolower(merged_df$county_clean))
 
@@ -350,7 +350,7 @@ county_map_names  <- c("New York","Kings","Queens","Bronx","Richmond")
 county_map_values <- c("Manhattan","Brooklyn","Queens","Bronx","Staten Island")
 merged_df$borough <- unname(county_map_values[ match(merged_df$county_clean, county_map_names) ])
 
-# Order
+# Orders rows
 meta_want <- c("RegionID","SizeRank","RegionType","StateName","State","City","Metro","CountyName")
 meta_keep <- meta_want[meta_want %in% names(merged_df)]
 
@@ -375,5 +375,5 @@ print(utils::head(final_df, 10))
 
 # Output
 readr::write_csv(final_df, "nyc_zori_clean.csv")
-cat("Already download nyc_zori_2015_2024_clean.csv\n")
+cat("Already download nyc_zori_clean.csv\n")
 ```
