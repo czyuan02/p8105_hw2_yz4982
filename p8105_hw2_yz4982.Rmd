@@ -320,8 +320,9 @@ zori_long <- zori_long[zori_long$month >= ymd("2015-01-01") &
                        zori_long$month <= ymd("2024-08-31"), ]
 ```
 
+### Merge Zillow
 ```{r}
-## Standardize ZIP
+# Standardize ZIP
 zipinfo_df$zip <- stringr::str_pad(as.character(zipinfo_df$ZipCode), width = 5, pad = "0")
 
 ## Remove duplicate
@@ -338,6 +339,7 @@ zipinfo_clean <- unique(
 merged_df <- merge(zori_long, zipinfo_clean, by = "zip", all.x = TRUE)
 ```
 
+
 ```{r}
 # County Selection
 county_any <- merged_df$CountyName
@@ -347,6 +349,7 @@ merged_df$county_clean <- trimws(as.character(county_any))
 # Borough match
 merged_df$county_clean <- gsub("\\s*County$", "", merged_df$county_clean, ignore.case = TRUE)
 merged_df$county_clean <- tools::toTitleCase(tolower(merged_df$county_clean))
+
 
 county_map_names  <- c("New York","Kings","Queens","Bronx","Richmond")
 county_map_values <- c("Manhattan","Brooklyn","Queens","Bronx","Staten Island")

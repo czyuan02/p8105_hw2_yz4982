@@ -1959,7 +1959,10 @@ zori_long$month &lt;- lubridate::ymd(zori_long$month)</code></pre>
 
 zori_long &lt;- zori_long[zori_long$month &gt;= ymd(&quot;2015-01-01&quot;) &amp;
                        zori_long$month &lt;= ymd(&quot;2024-08-31&quot;), ]</code></pre>
-<pre class="r"><code>## Standardize ZIP
+</div>
+<div id="merge-zillow" class="section level3">
+<h3>Merge Zillow</h3>
+<pre class="r"><code># Standardize ZIP
 zipinfo_df$zip &lt;- stringr::str_pad(as.character(zipinfo_df$ZipCode), width = 5, pad = &quot;0&quot;)
 
 ## Remove duplicate
@@ -1980,8 +1983,8 @@ county_any[is.na(county_any) | trimws(as.character(county_any)) == &quot;&quot;]
 merged_df$county_clean &lt;- trimws(as.character(county_any))
 
 # Borough match
-merged_df$county_clean &lt;- gsub(&quot;\\s*County$&quot;, &quot;&quot;, merged_df$county_clean, ignore.case = TRUE)
 merged_df$county_clean &lt;- tools::toTitleCase(tolower(merged_df$county_clean))
+
 
 county_map_names  &lt;- c(&quot;New York&quot;,&quot;Kings&quot;,&quot;Queens&quot;,&quot;Bronx&quot;,&quot;Richmond&quot;)
 county_map_values &lt;- c(&quot;Manhattan&quot;,&quot;Brooklyn&quot;,&quot;Queens&quot;,&quot;Bronx&quot;,&quot;Staten Island&quot;)
@@ -2007,7 +2010,7 @@ cat(&quot;Total Row: &quot;, nrow(final_df), &quot;\n&quot;, sep = &quot;&quot;)
     &quot; ~ &quot;, as.character(max(final_df$month, na.rm = TRUE)), &quot;\n&quot;, sep = &quot;&quot;)</code></pre>
 <pre><code>## Time range: 2015-01-31 ~ 2024-08-31</code></pre>
 <pre class="r"><code>cat(&quot;缺失比例 - borough: &quot;, round(mean(is.na(final_df$borough))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
-<pre><code>## 缺失比例 - borough: 0%</code></pre>
+<pre><code>## 缺失比例 - borough: 100%</code></pre>
 <pre class="r"><code>cat(&quot;缺失比例 - county:  &quot;, round(mean(is.na(final_df$county_clean))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
 <pre><code>## 缺失比例 - county:  0%</code></pre>
 <pre class="r"><code>cat(&quot;缺失比例 - neigh.:  &quot;, round(mean(is.na(final_df$neighborhood))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
@@ -2015,24 +2018,24 @@ cat(&quot;Total Row: &quot;, nrow(final_df), &quot;\n&quot;, sep = &quot;&quot;)
 <pre class="r"><code>cat(&quot;缺失比例 - zori:    &quot;, round(mean(is.na(final_df$zori))*100, 1), &quot;%\n&quot;, sep = &quot;&quot;)</code></pre>
 <pre><code>## 缺失比例 - zori:    39%</code></pre>
 <pre class="r"><code>print(utils::head(final_df, 5))</code></pre>
-<pre><code>##           month borough county_clean           neighborhood   zip zori RegionID
-## 6961 2015-01-31   Bronx        Bronx Bronx Park and Fordham 10458   NA    61798
-## 8005 2015-01-31   Bronx        Bronx Bronx Park and Fordham 10467   NA    61807
-## 8121 2015-01-31   Bronx        Bronx Bronx Park and Fordham 10468   NA    61808
-## 6381 2015-01-31   Bronx        Bronx          Central Bronx 10453   NA    61793
-## 6845 2015-01-31   Bronx        Bronx          Central Bronx 10457   NA    61797
-##      SizeRank RegionType StateName State     City
-## 6961       63        zip        NY    NY New York
-## 8005       17        zip        NY    NY New York
-## 8121       95        zip        NY    NY New York
-## 6381       84        zip        NY    NY New York
-## 6845      107        zip        NY    NY New York
-##                                      Metro   CountyName
-## 6961 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 8005 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 8121 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 6381 New York-Newark-Jersey City, NY-NJ-PA Bronx County
-## 6845 New York-Newark-Jersey City, NY-NJ-PA Bronx County</code></pre>
+<pre><code>##            month borough county_clean           neighborhood   zip zori
+## 9977  2015-01-31    &lt;NA&gt; Kings County           Borough Park 11204   NA
+## 11601 2015-01-31    &lt;NA&gt; Kings County           Borough Park 11218   NA
+## 11717 2015-01-31    &lt;NA&gt; Kings County           Borough Park 11219   NA
+## 12761 2015-01-31    &lt;NA&gt; Kings County           Borough Park 11230   NA
+## 6961  2015-01-31    &lt;NA&gt; Bronx County Bronx Park and Fordham 10458   NA
+##       RegionID SizeRank RegionType StateName State     City
+## 9977     62015       91        zip        NY    NY New York
+## 11601    62029      125        zip        NY    NY New York
+## 11717    62030       43        zip        NY    NY New York
+## 12761    62040       57        zip        NY    NY New York
+## 6961     61798       63        zip        NY    NY New York
+##                                       Metro   CountyName
+## 9977  New York-Newark-Jersey City, NY-NJ-PA Kings County
+## 11601 New York-Newark-Jersey City, NY-NJ-PA Kings County
+## 11717 New York-Newark-Jersey City, NY-NJ-PA Kings County
+## 12761 New York-Newark-Jersey City, NY-NJ-PA Kings County
+## 6961  New York-Newark-Jersey City, NY-NJ-PA Bronx County</code></pre>
 <pre class="r"><code># Output
 readr::write_csv(final_df, &quot;nyc_zori_clean.csv&quot;)
 cat(&quot;Already download nyc_zori_clean.csv\n&quot;)</code></pre>
