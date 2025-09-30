@@ -1515,6 +1515,7 @@ library(scales)</code></pre>
 ## The following object is masked from &#39;package:readr&#39;:
 ## 
 ##     col_factor</code></pre>
+<pre class="r"><code>library(dplyr)</code></pre>
 <div id="promblem-1" class="section level2">
 <h2>Promblem 1</h2>
 <div id="clean-pols_month-data" class="section level3">
@@ -2073,18 +2074,172 @@ print(utils::head(missing_tbl, 20))</code></pre>
 ## 76 11252    Kings                       &lt;NA&gt;
 ## 77 11256    Kings                       &lt;NA&gt;
 ## 86 10008 New York                       &lt;NA&gt;</code></pre>
-<p>Comparing the ZIP-code crosswalk to Zillow, there are
-<strong>171</strong> ZIP codes present in the ZIP list but absent from
-the Zillow rental panel. These often correspond to ZIPs with little or
-no residential rental stock (e.g., airport facilities), PO-box or “firm”
-ZIPs, discontinued or newly created ZIPs, or areas with too few listings
-for a reliable index.</p>
-<p>For example, NYC ZIPs like <strong>11371 (LaGuardia
-Airport)</strong>, <strong>11430 (JFK Airport)</strong>, several
-<strong>101xx</strong> “firm/PO-box” ZIPs in Midtown (e.g.,
-<strong>10118</strong>, Empire State Building) commonly lack standard
-residential rental markets and may therefore be excluded by Zillow’s
-methodology.</p>
+<p>A comparison of the ZIP-code crosswalk and Zillow indicates
+<strong>171</strong> ZIP codes present in the crosswalk but absent from
+the rental panel. The missing ZIPs generally correspond to
+non-residential or low-inventory areas—PO-box ZIPs, airports,
+discontinued new codes, or ZIPs with insufficient listings. Examples
+include 11371 (LaGuardia Airport), 11430 (JFK Airport), and Midtown
+101xx ZIPs like 10118.</p>
+<pre class="r"><code>top10_drop &lt;- final_df |&gt;
+  mutate(
+    ym  = format(month, &quot;%Y-%m&quot;),
+    ymu = gsub(&quot;-&quot;, &quot;_&quot;, ym)
+  ) |&gt;
+  filter(ym %in% c(&quot;2020-01&quot;, &quot;2021-01&quot;)) |&gt;
+  select(zip, borough, neighborhood, ymu, zori) |&gt;
+  distinct(zip, ymu, .keep_all = TRUE) |&gt;
+  pivot_wider(
+    names_from  = ymu,
+    values_from = zori,
+    names_prefix = &quot;zori_&quot;
+  ) |&gt;
+  # Keep the ZIP for only two months without missing a beat
+  filter(!is.na(zori_2020_01), !is.na(zori_2021_01)) |&gt;
+  # Calculation of decline
+  mutate(
+    drop_amt = zori_2020_01 - zori_2021_01,
+    drop_pct = 100 * drop_amt / zori_2020_01
+  ) |&gt;
+  arrange(desc(drop_amt)) |&gt;
+  slice_head(n = 10) |&gt;
+  mutate(
+    zori_2020_01 = round(zori_2020_01, 0),
+    zori_2021_01 = round(zori_2021_01, 0),
+    drop_amt     = round(drop_amt, 0),
+    drop_pct     = sprintf(&quot;%.1f%%&quot;, drop_pct)
+  )
+
+print(top10_drop)</code></pre>
+<pre><code>## # A tibble: 10 × 7
+##    zip   borough   neighborhood      zori_2020_01 zori_2021_01 drop_amt drop_pct
+##    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;                    &lt;dbl&gt;        &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;   
+##  1 10007 Manhattan Lower Manhattan           6334         5422      913 14.4%   
+##  2 10069 Manhattan &lt;NA&gt;                      4623         3875      748 16.2%   
+##  3 10009 Manhattan Lower East Side           3406         2692      714 21.0%   
+##  4 10016 Manhattan Gramercy Park an…         3731         3019      712 19.1%   
+##  5 10001 Manhattan Chelsea and Clin…         4108         3398      710 17.3%   
+##  6 10002 Manhattan Lower East Side           3645         2935      710 19.5%   
+##  7 10004 Manhattan Lower Manhattan           3150         2444      706 22.4%   
+##  8 10038 Manhattan Lower Manhattan           3573         2876      698 19.5%   
+##  9 10012 Manhattan Greenwich Villag…         3629         2942      686 18.9%   
+## 10 10010 Manhattan Gramercy Park an…         3697         3012      685 18.5%</code></pre>
+<pre class="r"><code>knitr::kable(top10_drop, caption = &quot;Top 10 ZIPs: Largest Rent Drops, Jan 2020 → Jan 2021&quot;)</code></pre>
+<table style="width:100%;">
+<caption>Top 10 ZIPs: Largest Rent Drops, Jan 2020 → Jan 2021</caption>
+<colgroup>
+<col width="6%" />
+<col width="11%" />
+<col width="33%" />
+<col width="14%" />
+<col width="14%" />
+<col width="10%" />
+<col width="10%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">zip</th>
+<th align="left">borough</th>
+<th align="left">neighborhood</th>
+<th align="right">zori_2020_01</th>
+<th align="right">zori_2021_01</th>
+<th align="right">drop_amt</th>
+<th align="left">drop_pct</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">10007</td>
+<td align="left">Manhattan</td>
+<td align="left">Lower Manhattan</td>
+<td align="right">6334</td>
+<td align="right">5422</td>
+<td align="right">913</td>
+<td align="left">14.4%</td>
+</tr>
+<tr class="even">
+<td align="left">10069</td>
+<td align="left">Manhattan</td>
+<td align="left">NA</td>
+<td align="right">4623</td>
+<td align="right">3875</td>
+<td align="right">748</td>
+<td align="left">16.2%</td>
+</tr>
+<tr class="odd">
+<td align="left">10009</td>
+<td align="left">Manhattan</td>
+<td align="left">Lower East Side</td>
+<td align="right">3406</td>
+<td align="right">2692</td>
+<td align="right">714</td>
+<td align="left">21.0%</td>
+</tr>
+<tr class="even">
+<td align="left">10016</td>
+<td align="left">Manhattan</td>
+<td align="left">Gramercy Park and Murray Hill</td>
+<td align="right">3731</td>
+<td align="right">3019</td>
+<td align="right">712</td>
+<td align="left">19.1%</td>
+</tr>
+<tr class="odd">
+<td align="left">10001</td>
+<td align="left">Manhattan</td>
+<td align="left">Chelsea and Clinton</td>
+<td align="right">4108</td>
+<td align="right">3398</td>
+<td align="right">710</td>
+<td align="left">17.3%</td>
+</tr>
+<tr class="even">
+<td align="left">10002</td>
+<td align="left">Manhattan</td>
+<td align="left">Lower East Side</td>
+<td align="right">3645</td>
+<td align="right">2935</td>
+<td align="right">710</td>
+<td align="left">19.5%</td>
+</tr>
+<tr class="odd">
+<td align="left">10004</td>
+<td align="left">Manhattan</td>
+<td align="left">Lower Manhattan</td>
+<td align="right">3150</td>
+<td align="right">2444</td>
+<td align="right">706</td>
+<td align="left">22.4%</td>
+</tr>
+<tr class="even">
+<td align="left">10038</td>
+<td align="left">Manhattan</td>
+<td align="left">Lower Manhattan</td>
+<td align="right">3573</td>
+<td align="right">2876</td>
+<td align="right">698</td>
+<td align="left">19.5%</td>
+</tr>
+<tr class="odd">
+<td align="left">10012</td>
+<td align="left">Manhattan</td>
+<td align="left">Greenwich Village and Soho</td>
+<td align="right">3629</td>
+<td align="right">2942</td>
+<td align="right">686</td>
+<td align="left">18.9%</td>
+</tr>
+<tr class="even">
+<td align="left">10010</td>
+<td align="left">Manhattan</td>
+<td align="left">Gramercy Park and Murray Hill</td>
+<td align="right">3697</td>
+<td align="right">3012</td>
+<td align="right">685</td>
+<td align="left">18.5%</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 

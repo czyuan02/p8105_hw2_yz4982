@@ -13,6 +13,7 @@ library(janitor)
 library(lubridate) # date convert
 library(readxl) 
 library(scales)
+library(dplyr)
 ```
 
 Promblem 1
@@ -385,7 +386,6 @@ cat("Unique ZIP codes:  ", n_zip, "\n", sep = "")
 cat("Unique neighborhoods (non-missing): ", n_neigh, "\n", sep = "")
 cat("Time range: ", as.character(time_lo), " ~ ", as.character(time_hi), "\n", sep = "")
 
-
 ```
 In the tidy NYC ZORI panel, each row is a ZIP–month observation from `r as.character(time_lo)` to `r as.character(time_hi)`. Key variables include
 `month` (Date), `zip` (5-digit ZIP), `borough`, `county_clean`, `neighborhood`, Zillow metadata (e.g., `RegionID`, `City`, `State` when available), and the outcome `zori` (Zillow Observed Rent Index for all home types: SFR/condo/multifamily).
@@ -411,7 +411,38 @@ missing_tbl <- unique(
 print(utils::head(missing_tbl, 20))
 
 ```
-Comparing the ZIP-code crosswalk to Zillow, there are **`r length(zips_only_in_zipfile)`** ZIP codes present in the ZIP list but absent from the Zillow rental panel. These often correspond to ZIPs with little or no residential rental stock (e.g., airport facilities), PO-box or “firm” ZIPs, discontinued or newly created ZIPs, or areas with too few listings for a reliable index. 
+A comparison of the ZIP-code crosswalk and Zillow indicates **`r length(zips_only_in_zipfile)`** ZIP codes present in the crosswalk but absent from the rental panel. The missing ZIPs generally correspond to non-residential or low-inventory areas—PO-box ZIPs, airports, discontinued new codes, or ZIPs with insufficient listings. Examples include 11371 (LaGuardia Airport), 11430 (JFK Airport), and Midtown 101xx ZIPs like 10118.
 
-For example, NYC ZIPs like **11371 (LaGuardia Airport)**, **11430 (JFK Airport)**, several **101xx** “firm/PO-box” ZIPs in Midtown (e.g., **10118**, Empire State Building) commonly lack standard residential rental markets and may therefore be excluded by Zillow’s methodology.
+```{r}
+top10_drop <- final_df |>
+  mutate(
+    ym  = format(month, "%Y-%m"),
+    ymu = gsub("-", "_", ym)
+  ) |>
+  filter(ym %in% c("2020-01", "2021-01")) |>
+  select(zip, borough, neighborhood, ymu, zori) |>
+  distinct(zip, ymu, .keep_all = TRUE) |>
+  pivot_wider(
+    names_from  = ymu,
+    values_from = zori,
+    names_prefix = "zori_"
+  ) |>
+  # Keep the ZIP for only two months without missing a beat
+  filter(!is.na(zori_2020_01), !is.na(zori_2021_01)) |>
+  # Calculation of decline
+  mutate(
+    drop_amt = zori_2020_01 - zori_2021_01,
+    drop_pct = 100 * drop_amt / zori_2020_01
+  ) |>
+  arrange(desc(drop_amt)) |>
+  slice_head(n = 10) |>
+  mutate(
+    zori_2020_01 = round(zori_2020_01, 0),
+    zori_2021_01 = round(zori_2021_01, 0),
+    drop_amt     = round(drop_amt, 0),
+    drop_pct     = sprintf("%.1f%%", drop_pct)
+  )
 
+print(top10_drop)
+knitr::kable(top10_drop, caption = "Top 10 ZIPs: Largest Rent Drops, Jan 2020 → Jan 2021")
+```
